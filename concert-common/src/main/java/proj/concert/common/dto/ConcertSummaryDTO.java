@@ -1,7 +1,7 @@
 package proj.concert.common.dto;
 
 /**
- * Represents a small portion of the information about a concert. Intended to be used when not all info is requred.
+ * Represents a small portion of the information about a concert. Intended to be used when not all info is required.
  *
  * id         the concert's id
  * title      the concert's title

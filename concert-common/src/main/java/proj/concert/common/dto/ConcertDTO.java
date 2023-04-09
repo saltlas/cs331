@@ -71,6 +71,8 @@ public class ConcertDTO {
         this.blrb = blrb;
     }
 
+    @JsonSerialize(contentUsing = LocalDateTimeSerializer.class)
+    @JsonDeserialize(contentUsing = LocalDateTimeDeserializer.class)
     public List<LocalDateTime> getDates() {
         return dates;
     }
