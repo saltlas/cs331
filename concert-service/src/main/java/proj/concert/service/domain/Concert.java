@@ -42,18 +42,6 @@ public class Concert{
     public Concert() {
     }
 
-    public Concert(Long id, String title, String imageName, String blurb) {
-        this.id = id;
-        this.title = title;
-        this.imageName = imageName;
-        this.blrb = blurb;
-    }
-
-    public Concert(String title, String imageName) {
-        this.title = title;
-        this.imageName = imageName;
-    }
-
     public Long getId() {
         return id;
     }
@@ -86,19 +74,19 @@ public class Concert{
         this.blurb = blurb;
     }
 
-    public List<ConcertDate> getDates() {
+    public Set<ConcertDate> getDates() {
         return dates;
     }
 
-    public void setDates(List<ConcertDate> dates) {
+    public void setDates(Set<ConcertDate> dates) {
         this.dates = dates;
     }
 
-    public List<Performer> getPerformers() {
+    public Set<Performer> getPerformers() {
         return performers;
     }
 
-    public void setPerformers(List<Performer> performers) {
+    public void setPerformers(Set<Performer> performers) {
         this.performers = performers;
     }
 
