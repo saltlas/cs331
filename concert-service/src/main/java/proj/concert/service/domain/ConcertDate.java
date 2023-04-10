@@ -30,13 +30,13 @@ public class ConcertDate {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(Object obj) {
         if (!(obj instanceof ConcertDate))
             return false;
         if (obj == this)
             return true;
 
-        ConcertDate rhs = (Concert) obj;
+        ConcertDate rhs = (ConcertDate) obj;
         return new EqualsBuilder().
                 append(date, rhs.date).
                 isEquals();
