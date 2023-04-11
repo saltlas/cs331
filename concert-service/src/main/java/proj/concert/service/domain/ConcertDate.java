@@ -1,7 +1,7 @@
 package proj.concert.service.domain;
 
 import java.time.LocalDateTime;
-import java.util.Objects;
+import java.util.Set;
 
 import javax.persistence.*;
 
@@ -13,6 +13,9 @@ public class ConcertDate {
 
 	@Column(name="DATE", nullable=false)
     private LocalDateTime date;
+
+    @OneToMany(mappedBy = "concertDate")
+    private Set<Seat> seats;
 
     protected ConcertDate() {
     }
@@ -27,6 +30,14 @@ public class ConcertDate {
 
     public void setDate(LocalDateTime date) {
         this.date = date;
+    }
+
+    public Set<Seat> getSeats() {
+        return seats;
+    }
+
+    public void setSeats(Set<Seat> seats) {
+        this.seats = seats;
     }
 
     @Override
