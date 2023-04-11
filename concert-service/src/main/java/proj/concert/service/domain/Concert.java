@@ -16,7 +16,7 @@ public class Concert{
 
     @Id
     @Column(name = "ID")
-    private Long id;
+    private long id;
 
     @Column(name = "TITLE")
     private String title;
@@ -24,13 +24,11 @@ public class Concert{
     @Column(name = "IMAGE_NAME")
     private String imageName;
 
-    @Column(name = "BLURB")
+    @Lob //data is too long for a 255 character varchar so this marks it as a large object
+    @Column(name = "BLURB", columnDefinition="CLOB") //character large object
     private String blurb;
 
-    @ElementCollection
-    @CollectionTable(
-        name = "CONCERT_DATES",
-        joinColumns = @JoinColumn(name = "CONCERT_ID"))
+    @OneToMany(mappedBy="concert", cascade = CascadeType.ALL)
     private Set<ConcertDate> dates = new HashSet<>();
 
     @ManyToMany
@@ -42,11 +40,11 @@ public class Concert{
     public Concert() {
     }
 
-    public Long getId() {
+    public long getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(long id) {
         this.id = id;
     }
 

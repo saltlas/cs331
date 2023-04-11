@@ -28,7 +28,7 @@ import java.util.List;
 import java.util.Vector;
 
 
-@Path("/")
+@Path("/concert-service")
 @Produces({
     javax.ws.rs.core.MediaType.APPLICATION_JSON //ALL EXTRA PRODUCES/CONSUMES ANNOTATIONS NEED TO BE DONE PER METHOD, NOT DONE
 })
@@ -100,12 +100,39 @@ public class ConcertResource {
     }
 
     @GET
+    @Path("concerts/summaries")
+    public Response retrieveSummaries() {
+        try {
+            em.getTransaction().begin();
+
+            TypedQuery<Concert> query = em.createQuery("select e from Concert e", Concert.class);
+            List<Concert> result = query.getResultList();
+
+            ArrayList<ConcertSummaryDTO> collection = new ArrayList<ConcertSummaryDTO>();
+            ConcertSummaryMapper mapper = new ConcertSummaryMapper();
+
+
+            for (Concert concert : result) {
+                if (concert != null) {
+                    ConcertSummaryDTO concertSummaryDTO = mapper.convert(concert);
+                    collection.add(concertSummaryDTO);
+                }
+            }
+
+            em.getTransaction().commit();
+            return Response.status(200).entity(collection).build();
+        } finally {
+            em.close();
+        }
+    }
+
+    @GET
     @Path("performers")
     public Response retrievePerformers() {
         try {
             em.getTransaction().begin();
 
-            TypedQuery<Performer> query = em.createQuery("select * from Performer p", Performer.class);
+            TypedQuery<Performer> query = em.createQuery("select p from Performer p", Performer.class);
             List<Performer> result = query.getResultList();
 
             ArrayList<PerformerDTO> collection = new ArrayList<PerformerDTO>();

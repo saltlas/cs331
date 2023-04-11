@@ -12,7 +12,7 @@ public class Performer {
 
     @Id
     @Column(name = "ID")
-    private Long id;
+    private long id;
 
     @Column(name = "NAME")
     private String name;
@@ -24,14 +24,15 @@ public class Performer {
     @Enumerated(EnumType.STRING)
     private Genre genre;
 
-    @Column(name = "BLURB")
+    @Lob //data is too long for a 255 character varchar so this marks it as a large object
+    @Column(name = "BLURB", columnDefinition="CLOB") //character large object
     private String blurb;
 
-    public Long getId() {
+    public long getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(long id) {
         this.id = id;
     }
 

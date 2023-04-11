@@ -11,6 +11,7 @@ import java.math.BigDecimal;
 @Table(name = "SEATS")
 public class Seat {
 	@Id
+    @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name = "ID")
     private long id;
 

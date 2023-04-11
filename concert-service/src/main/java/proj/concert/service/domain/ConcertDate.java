@@ -8,8 +8,18 @@ import javax.persistence.*;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
-@Embeddable
+@Entity
+@Table(name = "CONCERT_DATES")
 public class ConcertDate {
+
+    @Id
+    @GeneratedValue(strategy=GenerationType.IDENTITY)
+    @Column(name = "ID")
+    private long id;
+
+    @ManyToOne
+    @JoinColumn(name = "CONCERT_ID", nullable = false)
+    private Concert concert;
 
 	@Column(name="DATE", nullable=false)
     private LocalDateTime date;
@@ -20,8 +30,12 @@ public class ConcertDate {
     protected ConcertDate() {
     }
 
-    public ConcertDate(LocalDateTime date){
-    	this.date = date;
+    public Concert getConcert() {
+        return concert;
+    }
+
+    public void setConcert(Concert concert) {
+        this.concert = concert;
     }
 
     public LocalDateTime getDate() {
@@ -50,12 +64,13 @@ public class ConcertDate {
         ConcertDate rhs = (ConcertDate) obj;
         return new EqualsBuilder().
                 append(date, rhs.date).
+                append(concert, rhs.concert).
                 isEquals();
     }
 
     @Override
     public int hashCode() {
-        return new HashCodeBuilder(17, 31).append(date).hashCode();
+        return new HashCodeBuilder(17, 31).append(date).append(concert).hashCode();
     }
 
 
