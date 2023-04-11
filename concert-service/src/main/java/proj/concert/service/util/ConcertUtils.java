@@ -4,13 +4,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import proj.concert.service.domain.Concert;
+import proj.concert.service.domain.ConcertDate;
 import proj.concert.service.domain.Seat;
 import proj.concert.service.services.ConcertApplication;
 import proj.concert.service.services.PersistenceManager;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
-import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -35,9 +35,9 @@ public class ConcertUtils {
             List<Concert> concerts = query.getResultList();
 
             // Get all dates for all concerts
-            Set<LocalDateTime> allDates = new HashSet<>();
+            Set<ConcertDate> allDates = new HashSet<>();
             for (Concert c : concerts) {
-                Set<LocalDateTime> dates = c.getDates();
+                Set<ConcertDate> dates = c.getDates();
                 allDates.addAll(dates);
             }
             em.getTransaction().commit();
@@ -46,7 +46,7 @@ public class ConcertUtils {
 
             // For each concert date, create the seats for that date and persist them.
             int seatCount = 0;
-            for (LocalDateTime date : allDates) {
+            for (ConcertDate date : allDates) {
 
                 em.getTransaction().begin();
                 Set<Seat> seatsForDate = TheatreLayout.createSeatsFor(date);
@@ -54,6 +54,9 @@ public class ConcertUtils {
                     em.persist(s);
                     seatCount++;
                 }
+
+                date.setSeats(seatsForDate);
+
                 em.getTransaction().commit();
 
                 // Ensures we aren't braking the EM with thousands of seat entities.

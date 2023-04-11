@@ -1,10 +1,10 @@
 package proj.concert.service.util;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
+import proj.concert.service.domain.ConcertDate;
 import proj.concert.service.domain.Seat;
 
 /**
@@ -28,7 +28,7 @@ public class TheatreLayout {
      * @param date the date
      * @return a list of Seat objects
      */
-    public static Set<Seat> createSeatsFor(LocalDateTime date) {
+    public static Set<Seat> createSeatsFor(ConcertDate date) {
 
         Set<Seat> seats = new HashSet<>();
 
