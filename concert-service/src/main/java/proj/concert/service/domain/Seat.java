@@ -1,11 +1,19 @@
 package proj.concert.service.domain;
 
 import javax.persistence.*;
+
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+
 import java.math.BigDecimal;
 
 @Entity
 @Table(name = "SEATS")
 public class Seat {
+	@Id
+    @Column(name = "ID")
+    private Long id;
+
 	@Column(name = "LABEL")
 	private String label;
 
@@ -27,6 +35,14 @@ public class Seat {
 	}
 	
 	public Seat() {}
+
+	public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
 	
 	public String getLabel() {
 		return label;
@@ -58,5 +74,28 @@ public class Seat {
 
 	public void setCost(BigDecimal cost) {
 		this.cost = cost;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (!(obj instanceof Seat)) {
+			return false;
+		}
+
+		if (obj == this) {
+			return true;
+		}
+
+		Seat rhs = (Seat) obj;
+
+		return new EqualsBuilder().
+				append(label, rhs.label).
+				append(concertDate, rhs.concertDate)
+				.isEquals();
+	}
+
+	@Override
+	public int hashCode() {
+		return new HashCodeBuilder(17, 31).append(label).append(concertDate).hashCode();
 	}
 }
