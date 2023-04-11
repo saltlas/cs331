@@ -56,6 +56,7 @@ public class ConcertUtils {
                 }
 
                 date.setSeats(seatsForDate);
+                em.merge(date);
 
                 em.getTransaction().commit();
 
