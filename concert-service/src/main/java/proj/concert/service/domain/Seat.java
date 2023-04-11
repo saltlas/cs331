@@ -12,7 +12,7 @@ import java.math.BigDecimal;
 public class Seat {
 	@Id
     @Column(name = "ID")
-    private Long id;
+    private long id;
 
 	@Column(name = "LABEL")
 	private String label;
