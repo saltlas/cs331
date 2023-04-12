@@ -1,6 +1,5 @@
 package proj.concert.service.services;
 
-import org.jboss.resteasy.annotations.jaxrs.PathParam;
 import proj.concert.common.dto.*;
 import proj.concert.common.types.*;
 
@@ -8,13 +7,20 @@ import proj.concert.service.domain.*;
 import proj.concert.service.mapper.*;
 
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.CookieParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
 
+import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.NewCookie;
 
 import javax.ws.rs.WebApplicationException;
 
@@ -176,27 +182,58 @@ public class ConcertResource {
             em.close();
         }
     }
-}
-
-/* NOT IMPLEMENTED BELOW - copy paste method into above class and then implement
 
 
-    @GET
-    @Path("concerts/summaries")
-    public Response retrieveSummaries() {
-        //TODO
+    @POST
+    @Path("login")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response authenticateUser(UserDTO creds) {
+
+        try {
+
+            em.getTransaction().begin();
+
+            TypedQuery<User> query = em.createQuery("select u from User u where u.username = :username", User.class).setParameter("username", creds.getUsername());
+            List<User> result = query.getResultList();
+
+            em.getTransaction().commit();
+
+            User credCompareUser = new User(creds.getUsername(), creds.getPassword());
+
+            if(result.size() == 0 || !result.get(0).equals(credCompareUser)){
+                throw new WebApplicationException(Response.Status.UNAUTHORIZED);
+            }
+
+            // Issue a token for the user
+            NewCookie cookie = new NewCookie("auth", result.get(0).getId().toString());
+
+            // Return the token on the response
+            return Response.status(200).cookie(cookie).build();
+
+        } 
+        finally {
+            em.close();
+        }      
     }
+
+
+
+
+
+
+}
+/* NOT IMPLEMENTED BELOW - copy paste method into above class and then implement
 
     @GET
     @Path("bookings")
-    public Response retrieveBooking(){
+    public Response retrieveBooking(@CookieParam("auth") Cookie clientId){
         //TODO
     }
 
 
     @POST
     @Path("bookings")
-    public Response createBooking(BookingRequestDTO bookingRequest){
+    public Response createBooking(@CookieParam("auth") Cookie clientId, BookingRequestDTO bookingRequest){
         //TODO
     }
 
@@ -206,16 +243,10 @@ public class ConcertResource {
         //TODO
     }
 
-    @POST
-    @Path("login")
-    public Response login(UserDTO creds){
-        //TODO
-    }
-
     //Taken from lecture examples lecture 10, will need modification for project purposes
     @GET
     @Path("subscribe/concertInfo")
-    public void subscribeToConcertInfo(@Suspended AsyncResponse sub, ConcertInfoSubscriptionDTO subscription) { 
+    public void subscribeToConcertInfo(@Suspended AsyncResponse sub, @CookieParam("auth") Cookie clientId, ConcertInfoSubscriptionDTO subscription) { 
         //TODO     
         //subs.add(sub);        
     }

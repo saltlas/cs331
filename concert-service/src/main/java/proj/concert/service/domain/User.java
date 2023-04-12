@@ -23,6 +23,9 @@ public class User {
     @Column(name = "VERSION")
     private Long version;
 
+    //required by JPA
+    protected User(){}
+
     public User(String username, String password) {
         this.username = username;
         this.password = password;
@@ -70,11 +73,12 @@ public class User {
         User rhs = (User) obj;
         return new EqualsBuilder().
                 append(username, rhs.username).
+                append(password, rhs.password).
                 isEquals();
     }
 
     @Override
     public int hashCode() {
-        return new HashCodeBuilder(17, 31).append(username).hashCode();
+        return new HashCodeBuilder(17, 31).append(username).append(password).hashCode();
     }
 }
