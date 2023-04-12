@@ -25,10 +25,12 @@ import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.WebApplicationException;
 
 import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
 import javax.persistence.TypedQuery;
 import javax.persistence.EntityGraph;
 
-
+import java.net.URI;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
@@ -216,6 +218,76 @@ public class ConcertResource {
         }      
     }
 
+    // @GET
+    // @Path("bookings")
+    // public Response retrieveBooking(@CookieParam("auth") Cookie clientId){
+    //     //TODO
+    // }
+
+    @POST
+    @Path("bookings")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response createBooking(@CookieParam("auth") Cookie clientId, BookingRequestDTO bookingRequest) {
+
+       if (clientId == null) {
+            throw new WebApplicationException(Response.Status.UNAUTHORIZED);
+        }
+
+        LocalDateTime date = bookingRequest.getDate();
+        Long concertId = bookingRequest.getConcertId();
+        List<String> seatLabels = bookingRequest.getSeatLabels();
+
+        if (seatLabels.size() == 0) {
+            throw new WebApplicationException(Response.Status.BAD_REQUEST);
+        }
+
+        try {
+            em.getTransaction().begin();
+    
+            // fetching concert date
+            TypedQuery<ConcertDate> concertDateQuery = em.createQuery("select d from ConcertDate d where d.date = :date and d.concert.id = :concertId", ConcertDate.class).setParameter("date", date).setParameter("concertId", concertId);
+            ConcertDate concertDate = concertDateQuery.getSingleResult();
+
+            // fetching seats
+            TypedQuery<Seat> seatQuery = em.createQuery("select s from Seat s where s.label in :seatLabels and s.concertDate.id = :concertDateId", Seat.class).setParameter("seatLabels", seatLabels).setParameter("concertDateId", concertDate.getId());
+            List<Seat> seats = seatQuery.getResultList();
+
+            // fetching user
+            User user = em.find(User.class, Long.parseLong(clientId.getValue()));
+
+            // checking if seats are available
+            for (Seat s : seats) {
+                if (s.isBooked()) {
+                    throw new WebApplicationException(Response.Status.FORBIDDEN);
+                }
+            }
+
+            for (Seat s : seats) {
+                s.setBooked(true);
+                em.merge(s);
+            }
+
+            // creating booking
+            Booking booking = new Booking();
+            booking.setUser(user);
+            booking.setDate(concertDate);
+            
+            em.persist(booking);
+            
+            booking.setSeats(seats);
+
+            em.merge(booking);
+
+            em.getTransaction().commit();
+
+            return Response.created(URI.create("/bookings/" + booking.getId())).build();
+
+        } catch (NoResultException e) {
+            return Response.status(Response.Status.BAD_REQUEST).build();
+        } finally {
+            em.close();
+        }
+    }
 
 
 
@@ -224,18 +296,6 @@ public class ConcertResource {
 }
 /* NOT IMPLEMENTED BELOW - copy paste method into above class and then implement
 
-    @GET
-    @Path("bookings")
-    public Response retrieveBooking(@CookieParam("auth") Cookie clientId){
-        //TODO
-    }
-
-
-    @POST
-    @Path("bookings")
-    public Response createBooking(@CookieParam("auth") Cookie clientId, BookingRequestDTO bookingRequest){
-        //TODO
-    }
 
     @GET
     @Path("seats/{date}")
