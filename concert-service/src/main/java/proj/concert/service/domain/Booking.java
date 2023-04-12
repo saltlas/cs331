@@ -16,11 +16,8 @@ public class Booking {
     @Column(name = "ID")
     private long id;
 
-    @ManyToOne
-    @JoinColumn(name = "DATE_ID", nullable = false)
-    private ConcertDate date;
 
-    @OneToMany(mappedBy = "booking")
+    @OneToMany(mappedBy = "booking", fetch = FetchType.EAGER)
     private List<Seat> seats;
 
     @ManyToOne
@@ -36,14 +33,6 @@ public class Booking {
 
     public void setId(long id) {
         this.id = id;
-    }
-
-    public void setDate(ConcertDate date) {
-        this.date = date;
-    }
-
-    public ConcertDate getDate() {
-        return date;
     }
 
     public void setSeats(List<Seat> seats) {
@@ -75,7 +64,6 @@ public class Booking {
         Booking rhs = (Booking) obj;
 
         return new EqualsBuilder().
-                append(date, rhs.date).
                 append(user, rhs.user)
                 .append(seats, rhs.seats)
                 .isEquals();
@@ -83,7 +71,7 @@ public class Booking {
 
     @Override
     public int hashCode() {
-        return new HashCodeBuilder(17, 31).append(date).append(user).append(seats).hashCode();
+        return new HashCodeBuilder(17, 31).append(user).append(seats).hashCode();
     }
     
 }
