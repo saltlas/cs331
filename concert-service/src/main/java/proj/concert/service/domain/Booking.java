@@ -17,12 +17,16 @@ public class Booking {
     private long id;
 
 
-    @OneToMany(fetch = FetchType.EAGER)
+    @OneToMany
     private List<Seat> seats;
 
     @ManyToOne
     @JoinColumn(name = "USER_ID", nullable = false)
     private User user;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "CONCERT_DATE_ID", nullable = false)
+    private ConcertDate date;
 
     public Booking() {
     }
@@ -49,6 +53,14 @@ public class Booking {
 
     public User getUser() {
         return user;
+    }
+
+    public void setDate(ConcertDate date) {
+        this.date = date;
+    }
+
+    public ConcertDate getDate() {
+        return date;
     }
 
     @Override
