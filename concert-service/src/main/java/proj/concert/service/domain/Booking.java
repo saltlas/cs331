@@ -17,7 +17,7 @@ public class Booking {
     private long id;
 
 
-    @OneToMany(mappedBy = "booking", fetch = FetchType.EAGER)
+    @OneToMany(fetch = FetchType.EAGER)
     private List<Seat> seats;
 
     @ManyToOne
