@@ -21,7 +21,7 @@ public class Seat {
 	@Column(name = "IS_BOOKED")
 	private boolean isBooked;
 
-	@ManyToOne(fetch = FetchType.EAGER)
+	@ManyToOne
 	@JoinColumn(name = "CONCERT_DATE", nullable = false)
 	private ConcertDate concertDate;
 
