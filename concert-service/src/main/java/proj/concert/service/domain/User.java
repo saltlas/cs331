@@ -3,6 +3,9 @@ package proj.concert.service.domain;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import javax.persistence.*;
 
 @Entity
@@ -22,6 +25,9 @@ public class User {
     @Version
     @Column(name = "VERSION")
     private Long version;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private Set<Booking> bookings = new HashSet<>();
 
     //required by JPA
     protected User(){}
@@ -61,6 +67,14 @@ public class User {
 
     protected void setVersion(Long version) {
         this.version = version;
+    }
+
+    public void setBookings(Set<Booking> bookings) {
+        this.bookings = bookings;
+    }
+
+    public Set<Booking> getBookings() {
+        return bookings;
     }
 
     @Override
