@@ -54,28 +54,28 @@ public class Booking {
         return user;
     }
 
-	@Override
-	public boolean equals(Object obj) {
-		if (!(obj instanceof Booking)) {
-			return false;
-		}
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof Booking)) {
+            return false;
+        }
 
-		if (obj == this) {
-			return true;
-		}
+        if (obj == this) {
+            return true;
+        }
 
-		Booking rhs = (Booking) obj;
+        Booking rhs = (Booking) obj;
 
-		return new EqualsBuilder().
-				append(date, rhs.date).
-				append(user, rhs.user)
+        return new EqualsBuilder().
+                append(date, rhs.date).
+                append(user, rhs.user)
                 .append(seats, rhs.seats)
-				.isEquals();
-	}
+                .isEquals();
+    }
 
-	@Override
-	public int hashCode() {
-		return new HashCodeBuilder(17, 31).append(date).append(user).append(seats).hashCode();
-	}
+    @Override
+    public int hashCode() {
+        return new HashCodeBuilder(17, 31).append(date).append(user).append(seats).hashCode();
+    }
     
 }
