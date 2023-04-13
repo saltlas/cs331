@@ -1,7 +1,6 @@
 package proj.concert.service.services;
 
 import proj.concert.common.dto.*;
-import proj.concert.common.types.*;
 
 import proj.concert.service.domain.*;
 import proj.concert.service.mapper.*;
@@ -12,14 +11,9 @@ import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.CookieParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.Consumes;
-import javax.ws.rs.container.AsyncResponse;
-import javax.ws.rs.container.Suspended;
 
-import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.NewCookie;
@@ -35,7 +29,6 @@ import java.net.URI;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 
 @Path("/concert-service")
@@ -44,7 +37,6 @@ import java.util.Vector;
 })
 public class ConcertResource {
 
-    //private static Logger LOGGER = LoggerFactory.getLogger(ConcertResource.class);
     private EntityManager em = PersistenceManager.instance().createEntityManager();
     //private final List<AsyncResponse> subs = new Vector<>(); needed for async methods but potentially will need several (one for each concert/date)
 
@@ -64,19 +56,18 @@ public class ConcertResource {
             TypedQuery<Concert> query = em.createQuery("select e from Concert e", Concert.class).setHint("javax.persistence.fetchgraph", entityGraph);
             List<Concert> result = query.getResultList();
 
-            ArrayList<ConcertDTO> collection = new ArrayList<ConcertDTO>();
-            ConcertMapper mapper = new ConcertMapper();
 
+            ArrayList<ConcertDTO> concerts = new ArrayList<ConcertDTO>();
 
             for (Concert concert : result) {
                 if (concert != null) {
-                    ConcertDTO concertDTO = mapper.convert(concert);
-                    collection.add(concertDTO);
+                    ConcertDTO concertDTO = ConcertMapper.convert(concert);
+                    concerts.add(concertDTO);
                 }
             }
 
             em.getTransaction().commit();
-            return Response.status(200).entity(collection).build();
+            return Response.status(200).entity(concerts).build();
         } finally {
             em.close();
         }
@@ -89,8 +80,8 @@ public class ConcertResource {
         try {
             em.getTransaction().begin();
 
+            //get concert from param id
             Concert concert = em.find(Concert.class, id);
-            //Concert concert = em.createQuery("select e from Concert e left join fetch e.dates where s.id = :id", Concert.class).setParameter("id", id).getSingleResult();
             if (concert == null) {
                 em.getTransaction().commit();
                 throw new WebApplicationException(Response.Status.NOT_FOUND);
@@ -100,8 +91,7 @@ public class ConcertResource {
             concert.getPerformers();
             em.getTransaction().commit();
 
-            ConcertMapper mapper = new ConcertMapper();
-            ConcertDTO concertDTO = mapper.convert(concert);
+            ConcertDTO concertDTO = ConcertMapper.convert(concert);
 
             return Response.status(200).entity(concertDTO).build();
         } finally {
@@ -115,22 +105,21 @@ public class ConcertResource {
         try {
             em.getTransaction().begin();
 
+            //get concerts and create summary for each
             TypedQuery<Concert> query = em.createQuery("select e from Concert e", Concert.class);
             List<Concert> result = query.getResultList();
 
-            ArrayList<ConcertSummaryDTO> collection = new ArrayList<ConcertSummaryDTO>();
-            ConcertSummaryMapper mapper = new ConcertSummaryMapper();
-
+            ArrayList<ConcertSummaryDTO> summaries = new ArrayList<ConcertSummaryDTO>();
 
             for (Concert concert : result) {
                 if (concert != null) {
-                    ConcertSummaryDTO concertSummaryDTO = mapper.convert(concert);
-                    collection.add(concertSummaryDTO);
+                    ConcertSummaryDTO concertSummaryDTO = ConcertSummaryMapper.convert(concert);
+                    summaries.add(concertSummaryDTO);
                 }
             }
 
             em.getTransaction().commit();
-            return Response.status(200).entity(collection).build();
+            return Response.status(200).entity(summaries).build();
         } finally {
             em.close();
         }
@@ -145,19 +134,17 @@ public class ConcertResource {
             TypedQuery<Performer> query = em.createQuery("select p from Performer p", Performer.class);
             List<Performer> result = query.getResultList();
 
-            ArrayList<PerformerDTO> collection = new ArrayList<PerformerDTO>();
-            PerformerMapper mapper = new PerformerMapper();
-
-
+            ArrayList<PerformerDTO> performers = new ArrayList<PerformerDTO>();
+            
             for (Performer performer : result) {
                 if (performer != null) {
-                    PerformerDTO performerDTO = mapper.convert(performer);
-                    collection.add(performerDTO);
+                    PerformerDTO performerDTO = PerformerMapper.convert(performer);
+                    performers.add(performerDTO);
                 }
             }
 
             em.getTransaction().commit();
-            return Response.status(200).entity(collection).build();
+            return Response.status(200).entity(performers).build();
         } finally {
             em.close();
         }
@@ -170,7 +157,6 @@ public class ConcertResource {
             em.getTransaction().begin();
 
             Performer performer = em.find(Performer.class, id);
-            //Concert concert = em.createQuery("select e from Concert e left join fetch e.dates where s.id = :id", Concert.class).setParameter("id", id).getSingleResult();
             if (performer == null) {
                 em.getTransaction().commit();
                 throw new WebApplicationException(Response.Status.NOT_FOUND);
@@ -178,8 +164,7 @@ public class ConcertResource {
 
             em.getTransaction().commit();
 
-            PerformerMapper mapper = new PerformerMapper();
-            PerformerDTO performerDTO = mapper.convert(performer);
+            PerformerDTO performerDTO = PerformerMapper.convert(performer);
 
             return Response.status(200).entity(performerDTO).build();
         } finally {
@@ -202,8 +187,10 @@ public class ConcertResource {
 
             em.getTransaction().commit();
 
+            //create example user to use to compare provided credentials to ones retrieved from db
             User credCompareUser = new User(creds.getUsername(), creds.getPassword());
 
+            //if there is no user in db with that username, or password is incorrect, throw exception
             if(result.size() == 0 || !result.get(0).equals(credCompareUser)){
                 throw new WebApplicationException(Response.Status.UNAUTHORIZED);
             }
