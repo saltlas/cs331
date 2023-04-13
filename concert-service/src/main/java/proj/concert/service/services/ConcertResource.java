@@ -33,9 +33,12 @@ import javax.persistence.EntityGraph;
 
 import java.net.URI;
 import java.time.LocalDateTime;
+import java.lang.Math;
+
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
+
+import org.javatuples.Pair;
 
 
 @Path("/concert-service")
@@ -44,10 +47,7 @@ import java.util.Vector;
 })
 public class ConcertResource {
 
-    //private static Logger LOGGER = LoggerFactory.getLogger(ConcertResource.class);
     private EntityManager em = PersistenceManager.instance().createEntityManager();
-    //private final List<AsyncResponse> subs = new Vector<>(); needed for async methods but potentially will need several (one for each concert/date)
-
 
     @GET
     @Path("concerts")
@@ -343,7 +343,11 @@ public class ConcertResource {
 
             em.merge(booking);
 
+            concertDate.getSeats(); //for subscription methods
+
             em.getTransaction().commit();
+
+            postConcertInfo(concertDate); //for subscription methods
 
             return Response.created(URI.create("concert-service/bookings/" + booking.getId())).build();
 
@@ -405,7 +409,75 @@ public class ConcertResource {
         } 
     }
 
+    @POST
+    @Path("subscribe/concertInfo")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public void subscribeToConcertInfo(@Suspended AsyncResponse sub, @CookieParam("auth") Cookie clientId, ConcertInfoSubscriptionDTO subscriptionInfo) { 
 
+        try {
+
+            if(clientId == null){
+                throw new WebApplicationException(Response.Status.UNAUTHORIZED);
+            }
+            
+            em.getTransaction().begin();
+
+            Concert concert = em.find(Concert.class, subscriptionInfo.getConcertId());
+
+            if(concert == null){ //concert not found
+                throw new WebApplicationException(Response.Status.BAD_REQUEST);
+            }
+
+            List<ConcertDate> dates = new ArrayList(concert.getDates());
+
+            em.getTransaction().commit();
+
+            Long dateId = -1L;
+            LocalDateTime subDate = subscriptionInfo.getDate();
+            for(ConcertDate date: dates){ //find date
+                if(date.getDate().equals(subDate)){
+                    dateId = new Long(date.getId());
+                }
+            }
+
+            if(dateId == -1L){ //invalid date
+                throw new WebApplicationException(Response.Status.BAD_REQUEST);
+            }
+
+            SubscriptionMap.instance().addSub(dateId, sub, Integer.valueOf(subscriptionInfo.getPercentageBooked()));
+
+
+        }
+        finally {
+            em.close();
+        }
+    }
+
+
+    private void postConcertInfo(ConcertDate date) { //seats MUST be eagerly loaded for this object
+
+        ConcertInfoMapper mapper = new ConcertInfoMapper();
+        ConcertInfoNotificationDTO notification = mapper.convert(date);
+
+        int percentageBooked = (int)Math.round(100*(1-((double)notification.getNumSeatsRemaining()/date.getSeats().size())));
+
+        Long dateId = new Long(date.getId());
+
+        ArrayList<Pair> subsForDate = SubscriptionMap.instance().getSubsForDate(dateId);   
+
+
+        if (!(subsForDate == null)){
+
+            for (Pair<AsyncResponse, Integer> subInfo : subsForDate) {
+                if(subInfo.getValue1().intValue() <= percentageBooked){
+                    subInfo.getValue0().resume(notification);
+                    SubscriptionMap.instance().removeSub(dateId, subInfo);
+                }
+            }
+            
+        }
+    
+    }
 
 }
 /* NOT IMPLEMENTED BELOW - copy paste method into above class and then implement
