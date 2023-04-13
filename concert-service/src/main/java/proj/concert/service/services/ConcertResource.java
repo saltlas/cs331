@@ -60,19 +60,20 @@ public class ConcertResource {
             TypedQuery<Concert> query = em.createQuery("select e from Concert e", Concert.class).setHint("javax.persistence.fetchgraph", entityGraph);
             List<Concert> result = query.getResultList();
 
-            ArrayList<ConcertDTO> collection = new ArrayList<ConcertDTO>();
+            ArrayList<ConcertDTO> concerts = new ArrayList<ConcertDTO>();
             ConcertMapper mapper = new ConcertMapper();
+            
 
 
             for (Concert concert : result) {
                 if (concert != null) {
                     ConcertDTO concertDTO = mapper.convert(concert);
-                    collection.add(concertDTO);
+                    concerts.add(concertDTO);
                 }
             }
 
             em.getTransaction().commit();
-            return Response.status(200).entity(collection).build();
+            return Response.status(200).entity(concerts).build();
         } finally {
             em.close();
         }
@@ -85,8 +86,8 @@ public class ConcertResource {
         try {
             em.getTransaction().begin();
 
+            //get concert from param id
             Concert concert = em.find(Concert.class, id);
-            //Concert concert = em.createQuery("select e from Concert e left join fetch e.dates where s.id = :id", Concert.class).setParameter("id", id).getSingleResult();
             if (concert == null) {
                 em.getTransaction().commit();
                 throw new WebApplicationException(Response.Status.NOT_FOUND);
@@ -111,22 +112,23 @@ public class ConcertResource {
         try {
             em.getTransaction().begin();
 
+            //get concerts and create summary for each
             TypedQuery<Concert> query = em.createQuery("select e from Concert e", Concert.class);
             List<Concert> result = query.getResultList();
 
-            ArrayList<ConcertSummaryDTO> collection = new ArrayList<ConcertSummaryDTO>();
+            ArrayList<ConcertSummaryDTO> summaries = new ArrayList<ConcertSummaryDTO>();
             ConcertSummaryMapper mapper = new ConcertSummaryMapper();
 
 
             for (Concert concert : result) {
                 if (concert != null) {
                     ConcertSummaryDTO concertSummaryDTO = mapper.convert(concert);
-                    collection.add(concertSummaryDTO);
+                    summaries.add(concertSummaryDTO);
                 }
             }
 
             em.getTransaction().commit();
-            return Response.status(200).entity(collection).build();
+            return Response.status(200).entity(summaries).build();
         } finally {
             em.close();
         }
@@ -141,19 +143,19 @@ public class ConcertResource {
             TypedQuery<Performer> query = em.createQuery("select p from Performer p", Performer.class);
             List<Performer> result = query.getResultList();
 
-            ArrayList<PerformerDTO> collection = new ArrayList<PerformerDTO>();
+            ArrayList<PerformerDTO> performers = new ArrayList<PerformerDTO>();
             PerformerMapper mapper = new PerformerMapper();
 
 
             for (Performer performer : result) {
                 if (performer != null) {
                     PerformerDTO performerDTO = mapper.convert(performer);
-                    collection.add(performerDTO);
+                    performers.add(performerDTO);
                 }
             }
 
             em.getTransaction().commit();
-            return Response.status(200).entity(collection).build();
+            return Response.status(200).entity(performers).build();
         } finally {
             em.close();
         }
@@ -166,7 +168,6 @@ public class ConcertResource {
             em.getTransaction().begin();
 
             Performer performer = em.find(Performer.class, id);
-            //Concert concert = em.createQuery("select e from Concert e left join fetch e.dates where s.id = :id", Concert.class).setParameter("id", id).getSingleResult();
             if (performer == null) {
                 em.getTransaction().commit();
                 throw new WebApplicationException(Response.Status.NOT_FOUND);
@@ -198,8 +199,10 @@ public class ConcertResource {
 
             em.getTransaction().commit();
 
+            //create example user to use to compare provided credentials to ones retrieved from db
             User credCompareUser = new User(creds.getUsername(), creds.getPassword());
 
+            //if there is no user in db with that username, or password is incorrect, throw exception
             if(result.size() == 0 || !result.get(0).equals(credCompareUser)){
                 throw new WebApplicationException(Response.Status.UNAUTHORIZED);
             }
