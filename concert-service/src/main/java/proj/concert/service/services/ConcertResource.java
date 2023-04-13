@@ -1,7 +1,260 @@
 package proj.concert.service.services;
 
+import proj.concert.common.dto.*;
+
+import proj.concert.service.domain.*;
+import proj.concert.service.mapper.*;
+
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.Consumes;
+
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.NewCookie;
+
+import javax.ws.rs.WebApplicationException;
+
+import javax.persistence.EntityManager;
+import javax.persistence.TypedQuery;
+import javax.persistence.EntityGraph;
+
+
+import java.util.ArrayList;
+import java.util.List;
+
+
+@Path("/concert-service")
+@Produces({
+    javax.ws.rs.core.MediaType.APPLICATION_JSON //ALL EXTRA PRODUCES/CONSUMES ANNOTATIONS NEED TO BE DONE PER METHOD, NOT DONE
+})
 public class ConcertResource {
 
-    // TODO Implement this.
+    private EntityManager em = PersistenceManager.instance().createEntityManager();
+    //private final List<AsyncResponse> subs = new Vector<>(); needed for async methods but potentially will need several (one for each concert/date)
+
+
+    @GET
+    @Path("concerts")
+    public Response retrieveConcerts() {
+        try {
+            em.getTransaction().begin();
+
+            //entitygraph used to reduce queries needed, might not work lol
+
+            EntityGraph<Concert> entityGraph = em.createEntityGraph(Concert.class);
+            entityGraph.addAttributeNodes("dates");
+            entityGraph.addAttributeNodes("performers");
+
+            TypedQuery<Concert> query = em.createQuery("select e from Concert e", Concert.class).setHint("javax.persistence.fetchgraph", entityGraph);
+            List<Concert> result = query.getResultList();
+
+
+            ArrayList<ConcertDTO> concerts = new ArrayList<ConcertDTO>();
+
+            for (Concert concert : result) {
+                if (concert != null) {
+                    ConcertDTO concertDTO = ConcertMapper.convert(concert);
+                    concerts.add(concertDTO);
+                }
+            }
+
+            em.getTransaction().commit();
+            return Response.status(200).entity(concerts).build();
+        } finally {
+            em.close();
+        }
+
+    }
+
+    @GET
+    @Path("concerts/{id}")
+    public Response retrieveConcert(@PathParam("id") long id) {
+        try {
+            em.getTransaction().begin();
+
+            //get concert from param id
+            Concert concert = em.find(Concert.class, id);
+            if (concert == null) {
+                em.getTransaction().commit();
+                throw new WebApplicationException(Response.Status.NOT_FOUND);
+            }
+
+            concert.getDates();
+            concert.getPerformers();
+            em.getTransaction().commit();
+
+            ConcertDTO concertDTO = ConcertMapper.convert(concert);
+
+            return Response.status(200).entity(concertDTO).build();
+        } finally {
+            em.close();
+        }
+    }
+
+    @GET
+    @Path("concerts/summaries")
+    public Response retrieveSummaries() {
+        try {
+            em.getTransaction().begin();
+
+            //get concerts and create summary for each
+            TypedQuery<Concert> query = em.createQuery("select e from Concert e", Concert.class);
+            List<Concert> result = query.getResultList();
+
+            ArrayList<ConcertSummaryDTO> summaries = new ArrayList<ConcertSummaryDTO>();
+
+            for (Concert concert : result) {
+                if (concert != null) {
+                    ConcertSummaryDTO concertSummaryDTO = ConcertSummaryMapper.convert(concert);
+                    summaries.add(concertSummaryDTO);
+                }
+            }
+
+            em.getTransaction().commit();
+            return Response.status(200).entity(summaries).build();
+        } finally {
+            em.close();
+        }
+    }
+
+    @GET
+    @Path("performers")
+    public Response retrievePerformers() {
+        try {
+            em.getTransaction().begin();
+
+            TypedQuery<Performer> query = em.createQuery("select p from Performer p", Performer.class);
+            List<Performer> result = query.getResultList();
+
+            ArrayList<PerformerDTO> performers = new ArrayList<PerformerDTO>();
+            
+            for (Performer performer : result) {
+                if (performer != null) {
+                    PerformerDTO performerDTO = PerformerMapper.convert(performer);
+                    performers.add(performerDTO);
+                }
+            }
+
+            em.getTransaction().commit();
+            return Response.status(200).entity(performers).build();
+        } finally {
+            em.close();
+        }
+    }
+
+    @GET
+    @Path("performers/{id}")
+    public Response retrievePerformer(@PathParam("id") long id) {
+        try {
+            em.getTransaction().begin();
+
+            Performer performer = em.find(Performer.class, id);
+            if (performer == null) {
+                em.getTransaction().commit();
+                throw new WebApplicationException(Response.Status.NOT_FOUND);
+            }
+
+            em.getTransaction().commit();
+
+            PerformerDTO performerDTO = PerformerMapper.convert(performer);
+
+            return Response.status(200).entity(performerDTO).build();
+        } finally {
+            em.close();
+        }
+    }
+
+
+    @POST
+    @Path("login")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response authenticateUser(UserDTO creds) {
+
+        try {
+
+            em.getTransaction().begin();
+
+            TypedQuery<User> query = em.createQuery("select u from User u where u.username = :username", User.class).setParameter("username", creds.getUsername());
+            List<User> result = query.getResultList();
+
+            em.getTransaction().commit();
+
+            //create example user to use to compare provided credentials to ones retrieved from db
+            User credCompareUser = new User(creds.getUsername(), creds.getPassword());
+
+            //if there is no user in db with that username, or password is incorrect, throw exception
+            if(result.size() == 0 || !result.get(0).equals(credCompareUser)){
+                throw new WebApplicationException(Response.Status.UNAUTHORIZED);
+            }
+
+            // Issue a token for the user
+            NewCookie cookie = new NewCookie("auth", result.get(0).getId().toString());
+
+            // Return the token on the response
+            return Response.status(200).cookie(cookie).build();
+
+        } 
+        finally {
+            em.close();
+        }      
+    }
+
+
+
+
+
 
 }
+/* NOT IMPLEMENTED BELOW - copy paste method into above class and then implement
+
+    @GET
+    @Path("bookings")
+    public Response retrieveBooking(@CookieParam("auth") Cookie clientId){
+        //TODO
+    }
+
+
+    @POST
+    @Path("bookings")
+    public Response createBooking(@CookieParam("auth") Cookie clientId, BookingRequestDTO bookingRequest){
+        //TODO
+    }
+
+    @GET
+    @Path("seats/{date}")
+    public Response getSeatStatus(@QueryParam("status") BookingStatus status){
+        //TODO
+    }
+
+    //Taken from lecture examples lecture 10, will need modification for project purposes
+    @GET
+    @Path("subscribe/concertInfo")
+    public void subscribeToConcertInfo(@Suspended AsyncResponse sub, @CookieParam("auth") Cookie clientId, ConcertInfoSubscriptionDTO subscription) { 
+        //TODO     
+        //subs.add(sub);        
+    }
+
+
+    //POSTs a notification, which will be pushed back to all subscribers, taken from lecture example code as above
+    // notification param the notification to POST.
+    @POST
+    public Response postConcertInfo(ConcertInfoNotificationDTO notification) {
+        //TODO
+
+        //synchronized (subs) {
+        //    for (AsyncResponse sub : subs) {
+        //        sub.resume(notification);
+        //    }
+        //    subs.clear();
+        //}
+
+        //return Response.ok().build();
+
+    }
+
+
+*/
