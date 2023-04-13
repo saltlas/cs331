@@ -411,12 +411,6 @@ public class ConcertResource {
 /* NOT IMPLEMENTED BELOW - copy paste method into above class and then implement
 
 
-    @GET
-    @Path("seats/{date}")
-    public Response getSeatStatus(@QueryParam("status") BookingStatus status){
-        //TODO
-    }
-
     //Taken from lecture examples lecture 10, will need modification for project purposes
     @GET
     @Path("subscribe/concertInfo")
