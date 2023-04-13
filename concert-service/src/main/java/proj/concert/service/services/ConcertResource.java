@@ -5,6 +5,8 @@ import proj.concert.common.types.*;
 
 import proj.concert.service.domain.*;
 import proj.concert.service.mapper.*;
+import proj.concert.service.jaxrs.*;
+
 
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -218,11 +220,74 @@ public class ConcertResource {
         }      
     }
 
-    // @GET
-    // @Path("bookings")
-    // public Response retrieveBooking(@CookieParam("auth") Cookie clientId){
-    //     //TODO
-    // }
+     @GET
+     @Path("bookings")
+     public Response retrieveBookings(@CookieParam("auth") Cookie clientId){
+       if (clientId == null) {
+            throw new WebApplicationException(Response.Status.UNAUTHORIZED);
+        }
+
+        try {
+            em.getTransaction().begin();
+
+            TypedQuery<Booking> query = em.createQuery("select b from Booking b where b.user.id = :id", Booking.class).setParameter("id", Long.parseLong(clientId.getValue()));
+            List<Booking> result = query.getResultList();
+
+            ArrayList<BookingDTO> collection = new ArrayList<BookingDTO>();
+            BookingMapper mapper = new BookingMapper();
+
+            em.getTransaction().commit();
+
+            for(Booking b: result){
+                collection.add(mapper.convert(b));
+            }
+
+            return Response.status(200).entity(collection).build();
+
+        } finally {
+            em.close();
+        }     
+    }
+
+     @GET
+     @Path("bookings/{id}")
+     public Response retrieveBooking(@CookieParam("auth") Cookie clientId, @PathParam("id") long id){
+
+       if (clientId == null) {
+            throw new WebApplicationException(Response.Status.UNAUTHORIZED);
+        }
+
+        try {
+            em.getTransaction().begin();
+
+            TypedQuery<Booking> query = em.createQuery("select b from Booking b where b.id = :id", Booking.class).setParameter("id", id);
+            List<Booking> result = query.getResultList();
+
+            if(result.size() == 0){
+                throw new WebApplicationException(Response.Status.BAD_REQUEST);
+            }
+
+            Booking booking = result.get(0);
+
+            if(booking.getUser().getId() != Long.parseLong(clientId.getValue())){
+                throw new WebApplicationException(Response.Status.FORBIDDEN);
+            }
+
+            em.getTransaction().commit();
+
+            BookingMapper mapper = new BookingMapper();
+            BookingDTO bookingDTO = mapper.convert(booking);
+
+            return Response.status(200).entity(bookingDTO).build();
+
+        } finally {
+            em.close();
+        }    
+
+
+
+     }
+
 
     @POST
     @Path("bookings")
@@ -280,7 +345,7 @@ public class ConcertResource {
 
             em.getTransaction().commit();
 
-            return Response.created(URI.create("/bookings/" + booking.getId())).build();
+            return Response.created(URI.create("concert-service/bookings/" + booking.getId())).build();
 
         } catch (NoResultException e) {
             return Response.status(Response.Status.BAD_REQUEST).build();
@@ -289,7 +354,56 @@ public class ConcertResource {
         }
     }
 
+    @GET
+    @Path("seats/{date}")
+    public Response getSeatStatus(@PathParam("date") LocalDateTimeParam date, @QueryParam("status") BookingStatus status){
 
+        LocalDateTime dateTime = date.getLocalDateTime();
+
+        String queryString = "";
+        switch(status.ordinal()){
+            case 0:
+                queryString = "select s from Seat s where s.concertDate.id = :dateId and s.isBooked = TRUE";
+                break;
+            case 1:
+                queryString = "select s from Seat s where s.concertDate.id = :dateId and s.isBooked = FALSE";
+                break;
+            case 2:
+                queryString = "select s from Seat s where s.concertDate.id = :dateId";
+                break;
+
+        }
+
+        try {
+            em.getTransaction().begin();
+
+            TypedQuery<ConcertDate> concertDateQuery = em.createQuery("select d from ConcertDate d where d.date = :date", ConcertDate.class).setParameter("date", dateTime);
+            List<ConcertDate> dateResult = concertDateQuery.getResultList();
+
+            if(dateResult.size() == 0){
+                throw new WebApplicationException(Response.Status.BAD_REQUEST);
+            }
+
+            long dateId = dateResult.get(0).getId();
+
+            TypedQuery<Seat> query = em.createQuery(queryString, Seat.class).setParameter("dateId", dateId);
+            List<Seat> result = query.getResultList();
+
+            ArrayList<SeatDTO> collection = new ArrayList<SeatDTO>();
+            SeatMapper mapper = new SeatMapper();
+
+            em.getTransaction().commit();
+
+            for(Seat s: result){
+                collection.add(mapper.convert(s));
+            }
+
+            return Response.status(200).entity(collection).build();
+
+        } finally {
+            em.close();
+        } 
+    }
 
 
 
