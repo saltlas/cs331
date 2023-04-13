@@ -11,17 +11,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-public class ConcertMapper {
+public abstract class ConcertMapper {
 
-	public ConcertMapper(){
-	}
 
-	public ConcertDTO convert(Concert concert){
+	public static ConcertDTO convert(Concert concert){
 		ConcertDTO dto = new ConcertDTO(concert.getId(), concert.getTitle(), concert.getImageName(), concert.getBlurb());
 		List<PerformerDTO> performers = new ArrayList<>();
-		PerformerMapper mapper = new PerformerMapper();
 		for(Performer performer: concert.getPerformers()){
-			performers.add(mapper.convert(performer));
+			performers.add(PerformerMapper.convert(performer));
 		}
 		dto.setPerformers(performers);
 

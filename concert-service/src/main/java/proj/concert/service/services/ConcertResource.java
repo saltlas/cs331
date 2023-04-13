@@ -1,7 +1,6 @@
 package proj.concert.service.services;
 
 import proj.concert.common.dto.*;
-import proj.concert.common.types.*;
 
 import proj.concert.service.domain.*;
 import proj.concert.service.mapper.*;
@@ -10,14 +9,9 @@ import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.CookieParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.Consumes;
-import javax.ws.rs.container.AsyncResponse;
-import javax.ws.rs.container.Suspended;
 
-import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.NewCookie;
@@ -31,7 +25,6 @@ import javax.persistence.EntityGraph;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 
 @Path("/concert-service")
@@ -40,7 +33,6 @@ import java.util.Vector;
 })
 public class ConcertResource {
 
-    //private static Logger LOGGER = LoggerFactory.getLogger(ConcertResource.class);
     private EntityManager em = PersistenceManager.instance().createEntityManager();
     //private final List<AsyncResponse> subs = new Vector<>(); needed for async methods but potentially will need several (one for each concert/date)
 
@@ -60,14 +52,12 @@ public class ConcertResource {
             TypedQuery<Concert> query = em.createQuery("select e from Concert e", Concert.class).setHint("javax.persistence.fetchgraph", entityGraph);
             List<Concert> result = query.getResultList();
 
-            ArrayList<ConcertDTO> concerts = new ArrayList<ConcertDTO>();
-            ConcertMapper mapper = new ConcertMapper();
-            
 
+            ArrayList<ConcertDTO> concerts = new ArrayList<ConcertDTO>();
 
             for (Concert concert : result) {
                 if (concert != null) {
-                    ConcertDTO concertDTO = mapper.convert(concert);
+                    ConcertDTO concertDTO = ConcertMapper.convert(concert);
                     concerts.add(concertDTO);
                 }
             }
@@ -97,8 +87,7 @@ public class ConcertResource {
             concert.getPerformers();
             em.getTransaction().commit();
 
-            ConcertMapper mapper = new ConcertMapper();
-            ConcertDTO concertDTO = mapper.convert(concert);
+            ConcertDTO concertDTO = ConcertMapper.convert(concert);
 
             return Response.status(200).entity(concertDTO).build();
         } finally {
@@ -117,12 +106,10 @@ public class ConcertResource {
             List<Concert> result = query.getResultList();
 
             ArrayList<ConcertSummaryDTO> summaries = new ArrayList<ConcertSummaryDTO>();
-            ConcertSummaryMapper mapper = new ConcertSummaryMapper();
-
 
             for (Concert concert : result) {
                 if (concert != null) {
-                    ConcertSummaryDTO concertSummaryDTO = mapper.convert(concert);
+                    ConcertSummaryDTO concertSummaryDTO = ConcertSummaryMapper.convert(concert);
                     summaries.add(concertSummaryDTO);
                 }
             }
@@ -144,12 +131,10 @@ public class ConcertResource {
             List<Performer> result = query.getResultList();
 
             ArrayList<PerformerDTO> performers = new ArrayList<PerformerDTO>();
-            PerformerMapper mapper = new PerformerMapper();
-
-
+            
             for (Performer performer : result) {
                 if (performer != null) {
-                    PerformerDTO performerDTO = mapper.convert(performer);
+                    PerformerDTO performerDTO = PerformerMapper.convert(performer);
                     performers.add(performerDTO);
                 }
             }
@@ -175,8 +160,7 @@ public class ConcertResource {
 
             em.getTransaction().commit();
 
-            PerformerMapper mapper = new PerformerMapper();
-            PerformerDTO performerDTO = mapper.convert(performer);
+            PerformerDTO performerDTO = PerformerMapper.convert(performer);
 
             return Response.status(200).entity(performerDTO).build();
         } finally {
