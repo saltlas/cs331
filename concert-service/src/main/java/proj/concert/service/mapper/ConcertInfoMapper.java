@@ -9,12 +9,10 @@ import java.util.List;
 
 
 
-public class ConcertInfoMapper {
+public abstract class ConcertInfoMapper {
 
-	public ConcertInfoMapper(){
-	}
 
-	public ConcertInfoNotificationDTO convert(ConcertDate concertDate){
+	public static ConcertInfoNotificationDTO convert(ConcertDate concertDate){
 		List<Seat> seats = new ArrayList(concertDate.getSeats());
 		int unbooked = 0;
 		for(Seat seat: seats){

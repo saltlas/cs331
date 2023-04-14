@@ -448,8 +448,7 @@ public class ConcertResource {
 
     private void postConcertInfo(ConcertDate date) { //seats MUST be eagerly loaded for this object
 
-        ConcertInfoMapper mapper = new ConcertInfoMapper();
-        ConcertInfoNotificationDTO notification = mapper.convert(date);
+        ConcertInfoNotificationDTO notification = ConcertInfoMapper.convert(date);
 
         int percentageBooked = (int)Math.round(100*(1-((double)notification.getNumSeatsRemaining()/date.getSeats().size())));
 
