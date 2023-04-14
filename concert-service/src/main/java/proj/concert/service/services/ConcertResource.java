@@ -248,14 +248,12 @@ public class ConcertResource {
         try {
             em.getTransaction().begin();
 
-            TypedQuery<Booking> query = em.createQuery("select b from Booking b where b.id = :id", Booking.class).setParameter("id", id);
-            List<Booking> result = query.getResultList();
+            Booking booking = em.find(Booking.class, id);
 
-            if(result.size() == 0){
+            if(booking == null){
                 throw new WebApplicationException(Response.Status.BAD_REQUEST);
             }
 
-            Booking booking = result.get(0);
 
             if(booking.getUser().getId() != Long.parseLong(clientId.getValue())){
                 throw new WebApplicationException(Response.Status.FORBIDDEN);
