@@ -22,7 +22,7 @@ public class BookingRequestDTO {
     private LocalDateTime date;
     private List<String> seatLabels = new ArrayList<>();
 
-    public BookingRequestDTO(){}
+    public BookingRequestDTO() {}
 
     public BookingRequestDTO(long concertId, LocalDateTime date) {
         this.concertId = concertId;

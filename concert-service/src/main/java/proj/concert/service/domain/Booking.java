@@ -28,8 +28,7 @@ public class Booking {
     @JoinColumn(name = "CONCERT_DATE_ID", nullable = false)
     private ConcertDate date;
 
-    public Booking() {
-    }
+    public Booking() {}
 
     public long getId() {
         return id;

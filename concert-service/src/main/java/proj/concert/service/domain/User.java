@@ -30,7 +30,7 @@ public class User {
     private Set<Booking> bookings = new HashSet<>();
 
     //required by JPA
-    protected User(){}
+    protected User() {}
 
     public User(String username, String password) {
         this.username = username;
