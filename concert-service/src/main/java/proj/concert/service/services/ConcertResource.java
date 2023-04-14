@@ -2,6 +2,7 @@ package proj.concert.service.services;
 
 import proj.concert.common.dto.*;
 import proj.concert.common.types.BookingStatus;
+
 import proj.concert.service.domain.*;
 import proj.concert.service.mapper.*;
 import proj.concert.service.jaxrs.*;
@@ -15,6 +16,10 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.CookieParam;
+
+import javax.ws.rs.container.AsyncResponse;
+import javax.ws.rs.container.Suspended;
+
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.MediaType;
@@ -29,8 +34,13 @@ import javax.persistence.EntityGraph;
 
 import java.net.URI;
 import java.time.LocalDateTime;
+import java.lang.Math;
+
 import java.util.ArrayList;
 import java.util.List;
+
+import org.javatuples.Pair;
+
 
 
 @Path("/concert-service")
@@ -40,8 +50,6 @@ import java.util.List;
 public class ConcertResource {
 
     private EntityManager em = PersistenceManager.instance().createEntityManager();
-    //private final List<AsyncResponse> subs = new Vector<>(); needed for async methods but potentially will need several (one for each concert/date)
-
 
     @GET
     @Path("concerts")
@@ -328,7 +336,11 @@ public class ConcertResource {
 
             em.merge(booking);
 
+            concertDate.getSeats(); //for subscription methods
+
             em.getTransaction().commit();
+
+            postConcertInfo(concertDate); //for subscription methods
 
             return Response.created(URI.create("concert-service/bookings/" + booking.getId())).build();
 
@@ -389,37 +401,73 @@ public class ConcertResource {
         } 
     }
 
+    @POST
+    @Path("subscribe/concertInfo")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public void subscribeToConcertInfo(@Suspended AsyncResponse sub, @CookieParam("auth") Cookie clientId, ConcertInfoSubscriptionDTO subscriptionInfo) { 
 
+        try {
+
+            if(clientId == null){
+                throw new WebApplicationException(Response.Status.UNAUTHORIZED);
+            }
+            
+            em.getTransaction().begin();
+
+            Concert concert = em.find(Concert.class, subscriptionInfo.getConcertId());
+
+            if(concert == null){ //concert not found
+                throw new WebApplicationException(Response.Status.BAD_REQUEST);
+            }
+
+            List<ConcertDate> dates = new ArrayList(concert.getDates());
+
+            em.getTransaction().commit();
+
+            Long dateId = -1L;
+            LocalDateTime subDate = subscriptionInfo.getDate();
+            for(ConcertDate date: dates){ //find date
+                if(date.getDate().equals(subDate)){
+                    dateId = new Long(date.getId());
+                }
+            }
+
+            if(dateId == -1L){ //invalid date
+                throw new WebApplicationException(Response.Status.BAD_REQUEST);
+            }
+
+            SubscriptionMap.instance().addSub(dateId, sub, Integer.valueOf(subscriptionInfo.getPercentageBooked()));
+
+
+        }
+        finally {
+            em.close();
+        }
+    }
+
+
+    private void postConcertInfo(ConcertDate date) { //seats MUST be eagerly loaded for this object
+
+        ConcertInfoNotificationDTO notification = ConcertInfoMapper.convert(date);
+
+        int percentageBooked = (int)Math.round(100*(1-((double)notification.getNumSeatsRemaining()/date.getSeats().size())));
+
+        Long dateId = new Long(date.getId());
+
+        ArrayList<Pair> subsForDate = SubscriptionMap.instance().getSubsForDate(dateId);   
+
+
+        if (!(subsForDate == null)){
+
+            for (Pair<AsyncResponse, Integer> subInfo : subsForDate) {
+                if(subInfo.getValue1().intValue() <= percentageBooked){
+                    subInfo.getValue0().resume(notification);
+                    SubscriptionMap.instance().removeSub(dateId, subInfo);
+                }
+            }
+            
+        }
+    
+    }
 
 }
-/* NOT IMPLEMENTED BELOW - copy paste method into above class and then implement
-
-
-    //Taken from lecture examples lecture 10, will need modification for project purposes
-    @GET
-    @Path("subscribe/concertInfo")
-    public void subscribeToConcertInfo(@Suspended AsyncResponse sub, @CookieParam("auth") Cookie clientId, ConcertInfoSubscriptionDTO subscription) { 
-        //TODO     
-        //subs.add(sub);        
-    }
-
-
-    //POSTs a notification, which will be pushed back to all subscribers, taken from lecture example code as above
-    // notification param the notification to POST.
-    @POST
-    public Response postConcertInfo(ConcertInfoNotificationDTO notification) {
-        //TODO
-
-        //synchronized (subs) {
-        //    for (AsyncResponse sub : subs) {
-        //        sub.resume(notification);
-        //    }
-        //    subs.clear();
-        //}
-
-        //return Response.ok().build();
-
-    }
-
-
-*/

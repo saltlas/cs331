@@ -26,7 +26,12 @@
             <artifactId>concert-common</artifactId>
             <version>1.0</version>
         </dependency>
-
+        <!-- Tuple classes to help with async methods -->
+        <dependency>
+            <groupId>org.javatuples</groupId>
+            <artifactId>javatuples</artifactId>
+            <version>1.2</version>
+        </dependency>
         <!-- RESTEasy implementation -->
         <dependency>
             <groupId>org.jboss.resteasy</groupId>

@@ -8,6 +8,8 @@ import proj.concert.service.domain.ConcertDate;
 import proj.concert.service.domain.Seat;
 import proj.concert.service.services.ConcertApplication;
 import proj.concert.service.services.PersistenceManager;
+import proj.concert.service.services.SubscriptionMap;
+
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
@@ -24,6 +26,10 @@ public class ConcertUtils {
      * all concerts and dates.
      */
     public static void initConcerts() {
+
+        //clear subscription data as booking and seats are being reset
+        SubscriptionMap.reset();
+
         LOGGER.debug("initConcerts(): Creating the Application");
 
         EntityManager em = PersistenceManager.instance().createEntityManager();
