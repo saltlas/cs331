@@ -60,16 +60,16 @@ public class Performer {
         this.genre = genre;
     }
 
-    public String getBlurb(){
+    public String getBlurb() {
         return blurb;
     }
 
-    public void setBlurb(String blurb){
+    public void setBlurb(String blurb) {
         this.blurb = blurb;
     }
 
     @Override
-    public boolean equals(Object obj){
+    public boolean equals(Object obj) {
         if (!(obj instanceof Performer))
             return false;
         if (obj == this)
