@@ -38,6 +38,7 @@ import java.lang.Math;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.javatuples.Pair;
 
@@ -183,40 +184,6 @@ public class ConcertResource {
     }
 
 
-    @POST
-    @Path("login")
-    @Consumes(MediaType.APPLICATION_JSON)
-    public Response authenticateUser(UserDTO creds) {
-
-        try {
-
-            em.getTransaction().begin();
-
-            TypedQuery<User> query = em.createQuery("select u from User u where u.username = :username", User.class).setParameter("username", creds.getUsername());
-            List<User> result = query.getResultList();
-
-            em.getTransaction().commit();
-
-            //create example user to use to compare provided credentials to ones retrieved from db
-            User credCompareUser = new User(creds.getUsername(), creds.getPassword());
-
-            //if there is no user in db with that username, or password is incorrect, throw exception
-            if(result.size() == 0 || !result.get(0).equals(credCompareUser)){
-                throw new WebApplicationException(Response.Status.UNAUTHORIZED);
-            }
-
-            // Issue a token for the user
-            NewCookie cookie = new NewCookie("auth", result.get(0).getId().toString());
-
-            // Return the token on the response
-            return Response.status(200).cookie(cookie).build();
-
-        } 
-        finally {
-            em.close();
-        }      
-    }
-
      @GET
      @Path("bookings")
      public Response retrieveBookings(@CookieParam("auth") Cookie clientId){
@@ -304,7 +271,13 @@ public class ConcertResource {
     
             // fetching concert date
             TypedQuery<ConcertDate> concertDateQuery = em.createQuery("select d from ConcertDate d where d.date = :date and d.concert.id = :concertId", ConcertDate.class).setParameter("date", date).setParameter("concertId", concertId);
-            ConcertDate concertDate = concertDateQuery.getSingleResult();
+            List<ConcertDate> concertDates = concertDateQuery.getResultList();
+
+            if(concertDates.size() == 0){
+                throw new WebApplicationException(Response.Status.BAD_REQUEST);
+            }
+
+            ConcertDate concertDate = concertDates.get(0);
 
             // fetching seats
             TypedQuery<Seat> seatQuery = em.createQuery("select s from Seat s where s.label in :seatLabels and s.concertDate.id = :concertDateId", Seat.class).setParameter("seatLabels", seatLabels).setParameter("concertDateId", concertDate.getId());
@@ -330,11 +303,9 @@ public class ConcertResource {
             booking.setUser(user);
             booking.setDate(concertDate);
             
-            em.persist(booking);
-            
             booking.setSeats(seats);
 
-            em.merge(booking);
+            em.persist(booking);
 
             concertDate.getSeats(); //for subscription methods
 
@@ -344,8 +315,6 @@ public class ConcertResource {
 
             return Response.created(URI.create("concert-service/bookings/" + booking.getId())).build();
 
-        } catch (NoResultException e) {
-            return Response.status(Response.Status.BAD_REQUEST).build();
         } finally {
             em.close();
         }
@@ -450,11 +419,11 @@ public class ConcertResource {
 
         ConcertInfoNotificationDTO notification = ConcertInfoMapper.convert(date);
 
-        int percentageBooked = (int)Math.round(100*(1-((double)notification.getNumSeatsRemaining()/date.getSeats().size())));
+        int percentageBooked = (int) Math.round(100 * (1 - ((double) notification.getNumSeatsRemaining() / date.getSeats().size())));
 
         Long dateId = new Long(date.getId());
 
-        ArrayList<Pair> subsForDate = SubscriptionMap.instance().getSubsForDate(dateId);   
+        ConcurrentLinkedQueue<Pair> subsForDate = SubscriptionMap.instance().getSubsForDate(dateId);   
 
 
         if (!(subsForDate == null)){
@@ -468,6 +437,40 @@ public class ConcertResource {
             
         }
     
+    }
+
+    @POST
+    @Path("login")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response authenticateUser(UserDTO creds) {
+
+        try {
+
+            em.getTransaction().begin();
+
+            TypedQuery<User> query = em.createQuery("select u from User u where u.username = :username", User.class).setParameter("username", creds.getUsername());
+            List<User> result = query.getResultList();
+
+            em.getTransaction().commit();
+
+            //create example user to use to compare provided credentials to ones retrieved from db
+            User credCompareUser = new User(creds.getUsername(), creds.getPassword());
+
+            //if there is no user in db with that username, or password is incorrect, throw exception
+            if(result.size() == 0 || !result.get(0).equals(credCompareUser)){
+                throw new WebApplicationException(Response.Status.UNAUTHORIZED);
+            }
+
+            // Issue a token for the user
+            NewCookie cookie = new NewCookie("auth", result.get(0).getId().toString());
+
+            // Return the token on the response
+            return Response.status(200).cookie(cookie).build();
+
+        } 
+        finally {
+            em.close();
+        }      
     }
 
 }
