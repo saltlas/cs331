@@ -1,8 +1,8 @@
 package proj.concert.service.services;
 
-import java.util.ArrayList;
 import java.util.Map;
 
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.ws.rs.container.AsyncResponse;
@@ -13,7 +13,7 @@ import org.javatuples.Pair;
 public class SubscriptionMap {
     private static SubscriptionMap instance = null;
 
-    private Map<Long, ArrayList> subs;
+    private Map<Long, ConcurrentLinkedQueue> subs;
 
     protected SubscriptionMap() {
         subs = new ConcurrentHashMap<>();
@@ -27,15 +27,15 @@ public class SubscriptionMap {
     }
 
     public void addSub(Long dateId, AsyncResponse sub, Integer percentageBooked){
-        subs.putIfAbsent(dateId, new ArrayList<Pair>());
-        ArrayList<Pair> subsForDate = subs.get(dateId);
+        subs.putIfAbsent(dateId, new ConcurrentLinkedQueue<Pair>());
+        ConcurrentLinkedQueue<Pair> subsForDate = subs.get(dateId);
         Pair<AsyncResponse, Integer> currentSub = new Pair<AsyncResponse, Integer>(sub, percentageBooked);
         subsForDate.add(currentSub);
 
 
     }
 
-    public ArrayList<Pair> getSubsForDate(Long dateId){
+    public ConcurrentLinkedQueue<Pair> getSubsForDate(Long dateId){
         return subs.get(dateId);
     }
 
