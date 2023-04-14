@@ -1,7 +1,7 @@
 package proj.concert.service.services;
 
 import proj.concert.common.dto.*;
-
+import proj.concert.common.types.BookingStatus;
 import proj.concert.service.domain.*;
 import proj.concert.service.mapper.*;
 import proj.concert.service.jaxrs.*;
@@ -12,9 +12,11 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.Consumes;
-
+import javax.ws.rs.CookieParam;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.NewCookie;
 
@@ -221,12 +223,11 @@ public class ConcertResource {
             List<Booking> result = query.getResultList();
 
             ArrayList<BookingDTO> collection = new ArrayList<BookingDTO>();
-            BookingMapper mapper = new BookingMapper();
 
             em.getTransaction().commit();
 
             for(Booking b: result){
-                collection.add(mapper.convert(b));
+                collection.add(BookingMapper.convert(b));
             }
 
             return Response.status(200).entity(collection).build();
@@ -262,8 +263,7 @@ public class ConcertResource {
 
             em.getTransaction().commit();
 
-            BookingMapper mapper = new BookingMapper();
-            BookingDTO bookingDTO = mapper.convert(booking);
+            BookingDTO bookingDTO = BookingMapper.convert(booking);
 
             return Response.status(200).entity(bookingDTO).build();
 
@@ -377,12 +377,11 @@ public class ConcertResource {
             List<Seat> result = query.getResultList();
 
             ArrayList<SeatDTO> collection = new ArrayList<SeatDTO>();
-            SeatMapper mapper = new SeatMapper();
 
             em.getTransaction().commit();
 
             for(Seat s: result){
-                collection.add(mapper.convert(s));
+                collection.add(SeatMapper.convert(s));
             }
 
             return Response.status(200).entity(collection).build();
