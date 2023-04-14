@@ -1,7 +1,5 @@
 package proj.concert.service.domain;
 
-//import java.time.LocalDateTime;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -12,7 +10,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 @Entity
 @Table(name = "CONCERTS")
-public class Concert{
+public class Concert {
 
     @Id
     @Column(name = "ID")
@@ -37,8 +35,7 @@ public class Concert{
            inverseJoinColumns = { @JoinColumn(name = "PERFORMER_ID") })
     private Set<Performer> performers = new HashSet<>();
 
-    public Concert() {
-    }
+    public Concert() {}
 
     public long getId() {
         return id;
@@ -68,7 +65,7 @@ public class Concert{
         return blurb;
     }
 
-    public void setBlurb(String blrb) {
+    public void setBlurb(String blurb) {
         this.blurb = blurb;
     }
 
