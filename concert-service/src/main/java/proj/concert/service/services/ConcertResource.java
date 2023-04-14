@@ -302,11 +302,11 @@ public class ConcertResource {
             Booking booking = new Booking();
             booking.setUser(user);
             booking.setDate(concertDate);
-            
+
             booking.setSeats(seats);
-
+            
             em.persist(booking);
-
+            
             concertDate.getSeats(); //for subscription methods
 
             em.getTransaction().commit();
