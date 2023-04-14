@@ -30,7 +30,6 @@ import javax.ws.rs.WebApplicationException;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.persistence.TypedQuery;
-import javax.persistence.EntityGraph;
 
 import java.net.URI;
 import java.time.LocalDateTime;
@@ -58,13 +57,7 @@ public class ConcertResource {
         try {
             em.getTransaction().begin();
 
-            //entitygraph used to reduce queries needed, might not work lol
-
-            EntityGraph<Concert> entityGraph = em.createEntityGraph(Concert.class);
-            entityGraph.addAttributeNodes("dates");
-            entityGraph.addAttributeNodes("performers");
-
-            TypedQuery<Concert> query = em.createQuery("select e from Concert e", Concert.class).setHint("javax.persistence.fetchgraph", entityGraph);
+            TypedQuery<Concert> query = em.createQuery("select e from Concert e", Concert.class);
             List<Concert> result = query.getResultList();
 
 
