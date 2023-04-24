@@ -96,7 +96,7 @@ public class Booking {
                 .isEquals();
     }
 
-    /** The hash-code value of a booking is derived from it's user and seats. */
+    /** The hash-code value of a booking is derived from its user and seats. */
     @Override
     public int hashCode() {
         return new HashCodeBuilder(17, 31).append(user).append(seats).hashCode();
