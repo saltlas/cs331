@@ -17,7 +17,10 @@ public class Booking {
     @Column(name = "ID")
     private long id;
 
-    /** The seats included by this booking. The `isBooked` property of these should be `true`. */
+    /** 
+     * The seats included by this booking. The `isBooked` property of these
+     * should be `true`.
+     */
     @OneToMany
     private List<Seat> seats;
 
@@ -29,8 +32,9 @@ public class Booking {
     /** 
      * The concert date this booking is for.
      * 
-     * It may seem redundant to store the concert date here since the seats already have a reference to it, but it
-     * allows us to fetch the concert date of a booking without also having to fetch all of its seats.
+     * It may seem redundant to store the concert date here since the seats
+     * already have a reference to it, but it allows us to fetch the concert
+     * date of a booking without also having to fetch all of its seats.
      */
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "CONCERT_DATE_ID", nullable = false)
@@ -70,7 +74,10 @@ public class Booking {
         return date;
     }
 
-    /** Bookings are deemed equal if they are made by the same user, and contain the same seats. */
+    /** 
+     * Bookings are deemed equal if they are made by the same user, and contain
+     * the same seats.
+     */
     @Override
     public boolean equals(Object obj) {
         if (!(obj instanceof Booking)) {
@@ -89,6 +96,7 @@ public class Booking {
                 .isEquals();
     }
 
+    /** The hash-code value of a booking is derived from it's user and seats. */
     @Override
     public int hashCode() {
         return new HashCodeBuilder(17, 31).append(user).append(seats).hashCode();
