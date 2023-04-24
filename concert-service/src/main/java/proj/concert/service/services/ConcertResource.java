@@ -28,7 +28,6 @@ import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.WebApplicationException;
 
 import javax.persistence.EntityManager;
-import javax.persistence.NoResultException;
 import javax.persistence.TypedQuery;
 
 import java.net.URI;
@@ -41,8 +40,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.javatuples.Pair;
 
-
-
 @Path("/concert-service")
 @Produces({
     javax.ws.rs.core.MediaType.APPLICATION_JSON //ALL EXTRA PRODUCES/CONSUMES ANNOTATIONS NEED TO BE DONE PER METHOD, NOT DONE
@@ -51,6 +48,7 @@ public class ConcertResource {
 
     private EntityManager em = PersistenceManager.instance().createEntityManager();
 
+    /** Retrieves all concerts. */
     @GET
     @Path("concerts")
     public Response retrieveConcerts() {
@@ -78,13 +76,14 @@ public class ConcertResource {
 
     }
 
+    /** Retrieves a specific concert via its ID. */
     @GET
     @Path("concerts/{id}")
     public Response retrieveConcert(@PathParam("id") long id) {
         try {
             em.getTransaction().begin();
 
-            //get concert from param id
+            // get concert from path param id
             Concert concert = em.find(Concert.class, id);
             if (concert == null) {
                 em.getTransaction().commit();
@@ -103,13 +102,14 @@ public class ConcertResource {
         }
     }
 
+    /** Retrieves summaries of all concerts. */
     @GET
     @Path("concerts/summaries")
     public Response retrieveSummaries() {
         try {
             em.getTransaction().begin();
 
-            //get concerts and create summary for each
+            // get concerts and create summary for each
             TypedQuery<Concert> query = em.createQuery("select e from Concert e", Concert.class);
             List<Concert> result = query.getResultList();
 
@@ -129,6 +129,7 @@ public class ConcertResource {
         }
     }
 
+    /** Retrieves all performers. */
     @GET
     @Path("performers")
     public Response retrievePerformers() {
@@ -154,6 +155,7 @@ public class ConcertResource {
         }
     }
 
+    /** Retrieves a specific performer via their ID. */
     @GET
     @Path("performers/{id}")
     public Response retrievePerformer(@PathParam("id") long id) {
@@ -161,6 +163,7 @@ public class ConcertResource {
             em.getTransaction().begin();
 
             Performer performer = em.find(Performer.class, id);
+
             if (performer == null) {
                 em.getTransaction().commit();
                 throw new WebApplicationException(Response.Status.NOT_FOUND);
@@ -177,10 +180,12 @@ public class ConcertResource {
     }
 
 
-     @GET
-     @Path("bookings")
-     public Response retrieveBookings(@CookieParam("auth") Cookie clientId){
-       if (clientId == null) {
+    /** Retrieves all bookings. */
+    @GET
+    @Path("bookings")
+    public Response retrieveBookings(@CookieParam("auth") Cookie clientId) {
+
+        if (clientId == null) {
             throw new WebApplicationException(Response.Status.UNAUTHORIZED);
         }
 
@@ -194,7 +199,7 @@ public class ConcertResource {
 
             em.getTransaction().commit();
 
-            for(Booking b: result){
+            for (Booking b: result) {
                 collection.add(BookingMapper.convert(b));
             }
 
@@ -205,11 +210,12 @@ public class ConcertResource {
         }     
     }
 
-     @GET
-     @Path("bookings/{id}")
-     public Response retrieveBooking(@CookieParam("auth") Cookie clientId, @PathParam("id") long id){
+    /** Retrieves a specific booking via its ID. */
+    @GET
+    @Path("bookings/{id}")
+    public Response retrieveBooking(@CookieParam("auth") Cookie clientId, @PathParam("id") long id) {
 
-       if (clientId == null) {
+        if (clientId == null) {
             throw new WebApplicationException(Response.Status.UNAUTHORIZED);
         }
 
@@ -218,12 +224,12 @@ public class ConcertResource {
 
             Booking booking = em.find(Booking.class, id);
 
-            if(booking == null){
+            if (booking == null) {
                 throw new WebApplicationException(Response.Status.BAD_REQUEST);
             }
 
 
-            if(booking.getUser().getId() != Long.parseLong(clientId.getValue())){
+            if (booking.getUser().getId() != Long.parseLong(clientId.getValue())) {
                 throw new WebApplicationException(Response.Status.FORBIDDEN);
             }
 
@@ -235,19 +241,17 @@ public class ConcertResource {
 
         } finally {
             em.close();
-        }    
+        }
+    }
 
 
-
-     }
-
-
+    /** Creates a new booking. */
     @POST
     @Path("bookings")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response createBooking(@CookieParam("auth") Cookie clientId, BookingRequestDTO bookingRequest) {
 
-       if (clientId == null) {
+        if (clientId == null) {
             throw new WebApplicationException(Response.Status.UNAUTHORIZED);
         }
 
@@ -266,7 +270,8 @@ public class ConcertResource {
             TypedQuery<ConcertDate> concertDateQuery = em.createQuery("select d from ConcertDate d where d.date = :date and d.concert.id = :concertId", ConcertDate.class).setParameter("date", date).setParameter("concertId", concertId);
             List<ConcertDate> concertDates = concertDateQuery.getResultList();
 
-            if(concertDates.size() == 0){
+            if (concertDates.size() == 0) {
+                // cannot make a booking for a date in which no concert is found
                 throw new WebApplicationException(Response.Status.BAD_REQUEST);
             }
 
@@ -282,6 +287,7 @@ public class ConcertResource {
             // checking if seats are available
             for (Seat s : seats) {
                 if (s.isBooked()) {
+                    // cannot make a booking for a seat that is already booked
                     throw new WebApplicationException(Response.Status.FORBIDDEN);
                 }
             }
@@ -300,11 +306,11 @@ public class ConcertResource {
             
             em.persist(booking);
             
-            concertDate.getSeats(); //for subscription methods
+            concertDate.getSeats(); // for subscription methods
 
             em.getTransaction().commit();
 
-            postConcertInfo(concertDate); //for subscription methods
+            postConcertInfo(concertDate); // for subscription methods
 
             return Response.created(URI.create("concert-service/bookings/" + booking.getId())).build();
 
@@ -313,6 +319,10 @@ public class ConcertResource {
         }
     }
 
+    /** 
+     * Gets a list of seats for a given concert date, optionally filtered by
+     * those that are or are not yet booked.
+     */
     @GET
     @Path("seats/{date}")
     public Response getSeatStatus(@PathParam("date") LocalDateTimeParam date, @QueryParam("status") BookingStatus status){
@@ -320,7 +330,7 @@ public class ConcertResource {
         LocalDateTime dateTime = date.getLocalDateTime();
 
         String queryString = "";
-        switch(status.ordinal()){
+        switch (status.ordinal()) {
             case 0:
                 queryString = "select s from Seat s where s.concertDate.id = :dateId and s.isBooked = TRUE";
                 break;
@@ -339,7 +349,8 @@ public class ConcertResource {
             TypedQuery<ConcertDate> concertDateQuery = em.createQuery("select d from ConcertDate d where d.date = :date", ConcertDate.class).setParameter("date", dateTime);
             List<ConcertDate> dateResult = concertDateQuery.getResultList();
 
-            if(dateResult.size() == 0){
+            if (dateResult.size() == 0) {
+                // cannot get seats for a date that doesn't have a corresponding concert date
                 throw new WebApplicationException(Response.Status.BAD_REQUEST);
             }
 
@@ -352,7 +363,7 @@ public class ConcertResource {
 
             em.getTransaction().commit();
 
-            for(Seat s: result){
+            for (Seat s: result) {
                 collection.add(SeatMapper.convert(s));
             }
 
@@ -370,7 +381,7 @@ public class ConcertResource {
 
         try {
 
-            if(clientId == null){
+            if (clientId == null) {
                 throw new WebApplicationException(Response.Status.UNAUTHORIZED);
             }
             
@@ -378,23 +389,27 @@ public class ConcertResource {
 
             Concert concert = em.find(Concert.class, subscriptionInfo.getConcertId());
 
-            if(concert == null){ //concert not found
+            if(concert == null) {
+                // concert not found
                 throw new WebApplicationException(Response.Status.BAD_REQUEST);
             }
 
-            List<ConcertDate> dates = new ArrayList(concert.getDates());
+            List<ConcertDate> dates = new ArrayList<ConcertDate>(concert.getDates());
 
             em.getTransaction().commit();
 
             Long dateId = -1L;
             LocalDateTime subDate = subscriptionInfo.getDate();
-            for(ConcertDate date: dates){ //find date
-                if(date.getDate().equals(subDate)){
+
+            for (ConcertDate date: dates) {
+                //find date
+                if (date.getDate().equals(subDate)) {
                     dateId = new Long(date.getId());
                 }
             }
 
-            if(dateId == -1L){ //invalid date
+            if (dateId == -1L) {
+                //invalid date
                 throw new WebApplicationException(Response.Status.BAD_REQUEST);
             }
 
@@ -408,7 +423,8 @@ public class ConcertResource {
     }
 
 
-    private void postConcertInfo(ConcertDate date) { //seats MUST be eagerly loaded for this object
+    private void postConcertInfo(ConcertDate date) {
+        //seats MUST be eagerly loaded for this object
 
         ConcertInfoNotificationDTO notification = ConcertInfoMapper.convert(date);
 
@@ -419,15 +435,13 @@ public class ConcertResource {
         ConcurrentLinkedQueue<Pair> subsForDate = SubscriptionMap.instance().getSubsForDate(dateId);   
 
 
-        if (!(subsForDate == null)){
-
+        if (!(subsForDate == null)) {
             for (Pair<AsyncResponse, Integer> subInfo : subsForDate) {
-                if(subInfo.getValue1().intValue() <= percentageBooked){
+                if(subInfo.getValue1().intValue() <= percentageBooked) {
                     subInfo.getValue0().resume(notification);
                     SubscriptionMap.instance().removeSub(dateId, subInfo);
                 }
             }
-            
         }
     
     }
@@ -446,18 +460,18 @@ public class ConcertResource {
 
             em.getTransaction().commit();
 
-            //create example user to use to compare provided credentials to ones retrieved from db
+            // create example user to use to compare provided credentials to ones retrieved from db
             User credCompareUser = new User(creds.getUsername(), creds.getPassword());
 
-            //if there is no user in db with that username, or password is incorrect, throw exception
+            // if there is no user in db with that username, or password is incorrect, throw exception
             if(result.size() == 0 || !result.get(0).equals(credCompareUser)){
                 throw new WebApplicationException(Response.Status.UNAUTHORIZED);
             }
 
-            // Issue a token for the user
+            // issue a token for the user
             NewCookie cookie = new NewCookie("auth", result.get(0).getId().toString());
 
-            // Return the token on the response
+            // return the token on the response
             return Response.status(200).cookie(cookie).build();
 
         } 
