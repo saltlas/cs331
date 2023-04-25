@@ -34,11 +34,10 @@ public class Concert {
     private String blurb;
 
     /** The concert dates this concert is scheduled on. */
-    @OneToMany(mappedBy="concert", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "concert", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private Set<ConcertDate> dates = new HashSet<>();
 
-    /** The performers involved in this concert. */
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "CONCERT_PERFORMER",
            joinColumns = { @JoinColumn(name = "CONCERT_ID") },
            inverseJoinColumns = { @JoinColumn(name = "PERFORMER_ID") })

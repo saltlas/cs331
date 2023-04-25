@@ -90,8 +90,6 @@ public class ConcertResource {
                 throw new WebApplicationException(Response.Status.NOT_FOUND);
             }
 
-            concert.getDates();
-            concert.getPerformers();
             em.getTransaction().commit();
 
             ConcertDTO concertDTO = ConcertMapper.convert(concert);
@@ -305,8 +303,6 @@ public class ConcertResource {
             booking.setSeats(seats);
             
             em.persist(booking);
-            
-            concertDate.getSeats(); // for subscription methods
 
             em.getTransaction().commit();
 
@@ -430,7 +426,7 @@ public class ConcertResource {
 
         int percentageBooked = (int) Math.round(100 * (1 - ((double) notification.getNumSeatsRemaining() / date.getSeats().size())));
 
-        Long dateId = new Long(date.getId());
+        Long dateId = date.getId();
 
         ConcurrentLinkedQueue<Pair> subsForDate = SubscriptionMap.instance().getSubsForDate(dateId);   
 

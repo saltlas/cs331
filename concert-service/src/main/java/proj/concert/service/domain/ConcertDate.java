@@ -31,11 +31,11 @@ public class ConcertDate {
     private Concert concert;
 
     /** The underlying date/time this concert date is scheduled on. */
-	@Column(name="DATE", nullable=false)
+    @Column(name="DATE", nullable=false)
     private LocalDateTime date;
 
     /** All the seats of the venue for this concert date. */
-    @OneToMany(mappedBy = "concertDate")
+    @OneToMany(mappedBy = "concertDate", fetch= FetchType.EAGER, cascade = CascadeType.ALL)
     private Set<Seat> seats;
 
     public ConcertDate() {}
