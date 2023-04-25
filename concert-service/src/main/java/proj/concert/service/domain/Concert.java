@@ -26,10 +26,10 @@ public class Concert {
     @Column(name = "BLURB", columnDefinition="CLOB") //character large object
     private String blurb;
 
-    @OneToMany(mappedBy="concert", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy="concert", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private Set<ConcertDate> dates = new HashSet<>();
 
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "CONCERT_PERFORMER",
            joinColumns = { @JoinColumn(name = "CONCERT_ID") },
            inverseJoinColumns = { @JoinColumn(name = "PERFORMER_ID") })

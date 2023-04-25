@@ -24,7 +24,7 @@ public class ConcertDate {
 	@Column(name="DATE", nullable=false)
     private LocalDateTime date;
 
-    @OneToMany(mappedBy = "concertDate")
+    @OneToMany(mappedBy = "concertDate", fetch= FetchType.EAGER)
     private Set<Seat> seats;
 
     protected ConcertDate() {
