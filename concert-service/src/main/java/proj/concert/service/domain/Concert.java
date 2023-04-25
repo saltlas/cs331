@@ -26,7 +26,7 @@ public class Concert {
     @Column(name = "BLURB", columnDefinition="CLOB") //character large object
     private String blurb;
 
-    @OneToMany(mappedBy="concert", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "concert", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private Set<ConcertDate> dates = new HashSet<>();
 
     @ManyToMany(fetch = FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
