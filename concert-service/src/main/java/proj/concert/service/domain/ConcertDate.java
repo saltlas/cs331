@@ -31,7 +31,7 @@ public class ConcertDate {
     private Concert concert;
 
     /** The underlying date/time this concert date is scheduled on. */
-	  @Column(name="DATE", nullable=false)
+    @Column(name="DATE", nullable=false)
     private LocalDateTime date;
 
     /** All the seats of the venue for this concert date. */
