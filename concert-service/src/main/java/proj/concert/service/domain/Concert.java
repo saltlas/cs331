@@ -29,7 +29,7 @@ public class Concert {
     @OneToMany(mappedBy="concert", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private Set<ConcertDate> dates = new HashSet<>();
 
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(name = "CONCERT_PERFORMER",
            joinColumns = { @JoinColumn(name = "CONCERT_ID") },
            inverseJoinColumns = { @JoinColumn(name = "PERFORMER_ID") })
