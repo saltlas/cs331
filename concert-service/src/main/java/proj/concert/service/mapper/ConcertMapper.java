@@ -10,23 +10,32 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-
+/** 
+ * Mapper class for converting between {@link ConcertDTO}s and
+ * {@link Concert}s.
+ */
 public abstract class ConcertMapper {
 
-
-	public static ConcertDTO convert(Concert concert){
+	/** Converts a concert class into a DTO. */
+	public static ConcertDTO convert(Concert concert) {
 		ConcertDTO dto = new ConcertDTO(concert.getId(), concert.getTitle(), concert.getImageName(), concert.getBlurb());
+
 		List<PerformerDTO> performers = new ArrayList<>();
-		for(Performer performer: concert.getPerformers()){
+
+		for (Performer performer: concert.getPerformers()) {
 			performers.add(PerformerMapper.convert(performer));
 		}
+		
 		dto.setPerformers(performers);
 
 		List<LocalDateTime> dates = new ArrayList<>();
-		for(ConcertDate date: concert.getDates()){
+
+		for (ConcertDate date: concert.getDates()) {
 			dates.add(date.getDate());
 		}
+
 		dto.setDates(dates);
+		
 		return dto;
 	}
 }

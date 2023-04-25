@@ -1,11 +1,12 @@
 package proj.concert.service.domain;
+import proj.concert.common.types.Genre;
 
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
-import proj.concert.common.types.Genre;
 
 import javax.persistence.*;
 
+/** Represents a performer in the concert booking application. */
 @Entity
 @Table(name = "PERFORMERS")
 public class Performer {
@@ -24,8 +25,9 @@ public class Performer {
     @Enumerated(EnumType.STRING)
     private Genre genre;
 
-    @Lob //data is too long for a 255 character varchar so this marks it as a large object
-    @Column(name = "BLURB", columnDefinition="CLOB") //character large object
+    /** A brief synopsis of this performer. */
+    @Lob // data is too long for a 255 character varchar so this marks it as a large object
+    @Column(name = "BLURB", columnDefinition="CLOB") // character large object
     private String blurb;
 
     public long getId() {
@@ -68,19 +70,25 @@ public class Performer {
         this.blurb = blurb;
     }
 
+    /** Performers are deemed equal if they have the same name. */
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof Performer))
+        if (!(obj instanceof Performer)) {
             return false;
-        if (obj == this)
+        }
+
+        if (obj == this) {
             return true;
+        }
 
         Performer rhs = (Performer) obj;
+
         return new EqualsBuilder().
                 append(name, rhs.name).
                 isEquals();
     }
 
+    /** The hash-code value of a performer is derived from their name. */
     @Override
     public int hashCode() {
         return new HashCodeBuilder(17, 31).append(name).hashCode();
