@@ -43,10 +43,11 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.javatuples.Pair;
 
+/** The resource class for a concert booking service */
+
 @Path("/concert-service")
 @Produces({
-    javax.ws.rs.core.MediaType.APPLICATION_JSON //ALL EXTRA PRODUCES/CONSUMES ANNOTATIONS NEED TO BE DONE PER METHOD, NOT DONE
-})
+    javax.ws.rs.core.MediaType.APPLICATION_JSON})
 public class ConcertResource {
 
     private EntityManager em = PersistenceManager.instance().createEntityManager();
@@ -95,6 +96,7 @@ public class ConcertResource {
 
             em.getTransaction().commit();
 
+            //convert the concert into a concertdto to be sent off
             ConcertDTO concertDTO = ConcertMapper.convert(concert);
 
             return Response.status(200).entity(concertDTO).build();
@@ -206,9 +208,7 @@ public class ConcertResource {
 
             return Response.status(200).entity(collection).build();
 
-        } catch(org.hibernate.PessimisticLockException e){
-            throw new WebApplicationException(Response.Status.BAD_REQUEST);
-        }finally {
+        } finally {
             em.close();
         }     
     }
@@ -242,9 +242,7 @@ public class ConcertResource {
 
             return Response.status(200).entity(bookingDTO).build();
 
-        } catch(PessimisticLockException e){
-            throw new WebApplicationException(Response.Status.BAD_REQUEST);
-        }finally{
+        } finally {
             em.close();
         }
     }
@@ -317,6 +315,8 @@ public class ConcertResource {
             postConcertInfo(concertDate); // for subscription methods
 
             return Response.created(URI.create("concert-service/bookings/" + booking.getId())).build();
+        } catch(PessimisticLockException e){ // trying to write to the seats table while it's locked
+            throw new WebApplicationException(Response.Status.FORBIDDEN);
         } finally {
             em.close();
         }
@@ -333,7 +333,7 @@ public class ConcertResource {
         LocalDateTime dateTime = date.getLocalDateTime();
 
         String queryString = "";
-        switch (status.ordinal()) {
+        switch (status.ordinal()) { // 0 = booked, 1 = unbooked and 2 = any
             case 0:
                 queryString = "select s from Seat s where s.concertDate.id = :dateId and s.isBooked = TRUE";
                 break;
@@ -416,6 +416,7 @@ public class ConcertResource {
                 throw new WebApplicationException(Response.Status.BAD_REQUEST);
             }
 
+            // add sub to our subs map with the date id as the key and the percentage booked at which to notify
             SubscriptionMap.instance().addSub(dateId, sub, Integer.valueOf(subscriptionInfo.getPercentageBooked()));
 
 
@@ -427,7 +428,6 @@ public class ConcertResource {
 
 
     private void postConcertInfo(ConcertDate date) {
-        //seats MUST be eagerly loaded for this object
 
         ConcertInfoNotificationDTO notification = ConcertInfoMapper.convert(date);
 
@@ -435,13 +435,14 @@ public class ConcertResource {
 
         Long dateId = date.getId();
 
+        // get all subs for this date
         ConcurrentLinkedQueue<Pair> subsForDate = SubscriptionMap.instance().getSubsForDate(dateId);   
 
 
         if (!(subsForDate == null)) {
             for (Pair<AsyncResponse, Integer> subInfo : subsForDate) {
-                if(subInfo.getValue1().intValue() <= percentageBooked) {
-                    subInfo.getValue0().resume(notification);
+                if(subInfo.getValue1().intValue() <= percentageBooked) { // only notify the user if the percentage booked is over the requested threshold
+                    subInfo.getValue0().resume(notification); // value 0 is the asyncresponse to resume
                     SubscriptionMap.instance().removeSub(dateId, subInfo);
                 }
             }
