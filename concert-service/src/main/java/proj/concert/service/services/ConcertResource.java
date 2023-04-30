@@ -8,7 +8,12 @@ import proj.concert.service.mapper.*;
 import proj.concert.service.jaxrs.*;
 
 
-import javax.persistence.*;
+import javax.persistence.EntityManager;
+import javax.persistence.TypedQuery;
+import javax.persistence.EntityTransaction;
+import javax.persistence.PessimisticLockException;
+import javax.persistence.LockModeType;
+
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -182,15 +187,14 @@ public class ConcertResource {
         }
 
         try {
-            EntityTransaction tx = em.getTransaction();
-            tx.begin();
+            em.getTransaction().begin();
 
             TypedQuery<Booking> query = em.createQuery("select b from Booking b where b.user.id = :id", Booking.class).setParameter("id", Long.parseLong(clientId.getValue()));
             List<Booking> result = query.getResultList();
 
             ArrayList<BookingDTO> collection = new ArrayList<BookingDTO>();
 
-            tx.commit();
+            em.getTransaction().commit();
 
             for(Booking b: result){
                 collection.add(BookingMapper.convert(b));
@@ -214,8 +218,7 @@ public class ConcertResource {
         }
 
         try {
-            EntityTransaction tx = em.getTransaction();
-            tx.begin();
+            em.getTransaction().begin();
 
             Booking booking = em.find(Booking.class, id);
 
@@ -228,7 +231,7 @@ public class ConcertResource {
                 throw new WebApplicationException(Response.Status.FORBIDDEN);
             }
 
-            tx.commit();
+            em.getTransaction().commit();
 
             BookingDTO bookingDTO = BookingMapper.convert(booking);
 
@@ -263,8 +266,7 @@ public class ConcertResource {
         }
 
         try {
-            EntityTransaction tx = em.getTransaction( );
-            tx.begin();
+            em.getTransaction().begin();
 
             // fetching concert date
             TypedQuery<ConcertDate> concertDateQuery = em.createQuery("select d from ConcertDate d where d.date = :date and d.concert.id = :concertId", ConcertDate.class).setParameter("date", date).setParameter("concertId", concertId);
@@ -286,7 +288,7 @@ public class ConcertResource {
             // checking if seats are available
             for (Seat s : seats) {
                 if (s.isBooked()) {
-                    tx.commit(); //Need to commit transaction if error is thrown, as this will release the lock on the db
+                    em.getTransaction().commit(); //Need to commit transaction if error is thrown, as this will release the lock on the db
                     throw new WebApplicationException(Response.Status.FORBIDDEN);
                 }
             }
@@ -307,7 +309,7 @@ public class ConcertResource {
 
             concertDate.getSeats(); //for subscription methods
 
-            tx.commit();
+            em.getTransaction().commit();
 
             postConcertInfo(concertDate); //for subscription methods
 
