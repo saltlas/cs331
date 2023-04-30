@@ -8,6 +8,12 @@ import proj.concert.service.mapper.*;
 import proj.concert.service.jaxrs.*;
 
 
+import javax.persistence.EntityManager;
+import javax.persistence.TypedQuery;
+import javax.persistence.EntityTransaction;
+import javax.persistence.PessimisticLockException;
+import javax.persistence.LockModeType;
+
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -26,9 +32,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.NewCookie;
 
 import javax.ws.rs.WebApplicationException;
-
-import javax.persistence.EntityManager;
-import javax.persistence.TypedQuery;
 
 import java.net.URI;
 import java.time.LocalDateTime;
@@ -203,7 +206,9 @@ public class ConcertResource {
 
             return Response.status(200).entity(collection).build();
 
-        } finally {
+        } catch(org.hibernate.PessimisticLockException e){
+            throw new WebApplicationException(Response.Status.BAD_REQUEST);
+        }finally {
             em.close();
         }     
     }
@@ -237,7 +242,9 @@ public class ConcertResource {
 
             return Response.status(200).entity(bookingDTO).build();
 
-        } finally {
+        } catch(PessimisticLockException e){
+            throw new WebApplicationException(Response.Status.BAD_REQUEST);
+        }finally{
             em.close();
         }
     }
@@ -263,7 +270,7 @@ public class ConcertResource {
 
         try {
             em.getTransaction().begin();
-    
+
             // fetching concert date
             TypedQuery<ConcertDate> concertDateQuery = em.createQuery("select d from ConcertDate d where d.date = :date and d.concert.id = :concertId", ConcertDate.class).setParameter("date", date).setParameter("concertId", concertId);
             List<ConcertDate> concertDates = concertDateQuery.getResultList();
@@ -275,8 +282,8 @@ public class ConcertResource {
 
             ConcertDate concertDate = concertDates.get(0);
 
-            // fetching seats
-            TypedQuery<Seat> seatQuery = em.createQuery("select s from Seat s where s.label in :seatLabels and s.concertDate.id = :concertDateId", Seat.class).setParameter("seatLabels", seatLabels).setParameter("concertDateId", concertDate.getId());
+            // fetching seats with pessimistic read lock, so that they cannot be booked while we are already booking them
+            TypedQuery<Seat> seatQuery = em.createQuery("select s from Seat s where s.label in :seatLabels and s.concertDate.id = :concertDateId", Seat.class).setLockMode(LockModeType.PESSIMISTIC_READ).setHint("javax.persistence.lock.timeout", 5000 ).setParameter("seatLabels", seatLabels).setParameter("concertDateId", concertDate.getId());
             List<Seat> seats = seatQuery.getResultList();
 
             // fetching user
@@ -286,6 +293,7 @@ public class ConcertResource {
             for (Seat s : seats) {
                 if (s.isBooked()) {
                     // cannot make a booking for a seat that is already booked
+                    em.getTransaction().commit(); //Need to commit transaction if error is thrown, as this will release the lock on the db
                     throw new WebApplicationException(Response.Status.FORBIDDEN);
                 }
             }
@@ -301,7 +309,7 @@ public class ConcertResource {
             booking.setDate(concertDate);
 
             booking.setSeats(seats);
-            
+
             em.persist(booking);
 
             em.getTransaction().commit();
@@ -309,7 +317,6 @@ public class ConcertResource {
             postConcertInfo(concertDate); // for subscription methods
 
             return Response.created(URI.create("concert-service/bookings/" + booking.getId())).build();
-
         } finally {
             em.close();
         }
