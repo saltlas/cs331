@@ -182,14 +182,15 @@ public class ConcertResource {
         }
 
         try {
-            em.getTransaction().begin();
+            EntityTransaction tx = em.getTransaction();
+            tx.begin();
 
             TypedQuery<Booking> query = em.createQuery("select b from Booking b where b.user.id = :id", Booking.class).setParameter("id", Long.parseLong(clientId.getValue()));
             List<Booking> result = query.getResultList();
 
             ArrayList<BookingDTO> collection = new ArrayList<BookingDTO>();
 
-            em.getTransaction().commit();
+            tx.commit();
 
             for(Booking b: result){
                 collection.add(BookingMapper.convert(b));
@@ -197,7 +198,7 @@ public class ConcertResource {
 
             return Response.status(200).entity(collection).build();
 
-        } catch(PessimisticLockException e){
+        } catch(org.hibernate.PessimisticLockException e){
             throw new WebApplicationException(Response.Status.BAD_REQUEST);
         }finally {
             em.close();
@@ -213,7 +214,7 @@ public class ConcertResource {
         }
 
         try {
-            EntityTransaction tx = em.getTransaction( );
+            EntityTransaction tx = em.getTransaction();
             tx.begin();
 
             Booking booking = em.find(Booking.class, id);
@@ -276,7 +277,7 @@ public class ConcertResource {
             ConcertDate concertDate = concertDates.get(0);
 
             // fetching seats
-            TypedQuery<Seat> seatQuery = em.createQuery("select s from Seat s where s.label in :seatLabels and s.concertDate.id = :concertDateId", Seat.class).setLockMode(LockModeType.PESSIMISTIC_READ).setHint("javax.persistence.lock.timeout", 0 ).setParameter("seatLabels", seatLabels).setParameter("concertDateId", concertDate.getId());
+            TypedQuery<Seat> seatQuery = em.createQuery("select s from Seat s where s.label in :seatLabels and s.concertDate.id = :concertDateId", Seat.class).setLockMode(LockModeType.PESSIMISTIC_READ).setHint("javax.persistence.lock.timeout", 5000 ).setParameter("seatLabels", seatLabels).setParameter("concertDateId", concertDate.getId());
             List<Seat> seats = seatQuery.getResultList();
 
             // fetching user
@@ -285,6 +286,7 @@ public class ConcertResource {
             // checking if seats are available
             for (Seat s : seats) {
                 if (s.isBooked()) {
+                    tx.commit();
                     throw new WebApplicationException(Response.Status.FORBIDDEN);
                 }
             }
