@@ -276,7 +276,7 @@ public class ConcertResource {
 
             ConcertDate concertDate = concertDates.get(0);
 
-            // fetching seats
+            // fetching seats with pessimistic read lock, so that they cannot be booked while we are already booking them
             TypedQuery<Seat> seatQuery = em.createQuery("select s from Seat s where s.label in :seatLabels and s.concertDate.id = :concertDateId", Seat.class).setLockMode(LockModeType.PESSIMISTIC_READ).setHint("javax.persistence.lock.timeout", 5000 ).setParameter("seatLabels", seatLabels).setParameter("concertDateId", concertDate.getId());
             List<Seat> seats = seatQuery.getResultList();
 
@@ -286,7 +286,7 @@ public class ConcertResource {
             // checking if seats are available
             for (Seat s : seats) {
                 if (s.isBooked()) {
-                    tx.commit();
+                    tx.commit(); //Need to commit transaction if error is thrown, as this will release the lock on the db
                     throw new WebApplicationException(Response.Status.FORBIDDEN);
                 }
             }
