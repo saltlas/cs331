@@ -9,6 +9,8 @@ import javax.ws.rs.container.AsyncResponse;
 
 import org.javatuples.Pair;
 
+/** A class that holds subscriptions for users of the concert booking service in a map */
+
 public class SubscriptionMap {
     private static SubscriptionMap instance = null;
 
@@ -18,16 +20,20 @@ public class SubscriptionMap {
         subs = new ConcurrentHashMap<>();
     }
 
-    public static SubscriptionMap instance() {
+    public static SubscriptionMap instance() { // instantiating the class this way ensures subs don't get reset too early and therefore lost
         if (instance == null) {
             instance = new SubscriptionMap();
         }
         return instance;
     }
 
+    /** Adds a subscription to the map */
     public void addSub(Long dateId, AsyncResponse sub, Integer percentageBooked) {
-        subs.putIfAbsent(dateId, new ConcurrentLinkedQueue<Pair>());
+        // if the date in question isn't present as a key in the map yet, add it
+        subs.putIfAbsent(dateId, new ConcurrentLinkedQueue<Pair>()); 
+        // get the list of subs for the date
         ConcurrentLinkedQueue<Pair> subsForDate = subs.get(dateId);
+        // add a pair (tuple) to the list which contains the asyncresponse and the percentage at which to resume it
         Pair<AsyncResponse, Integer> currentSub = new Pair<AsyncResponse, Integer>(sub, percentageBooked);
         subsForDate.add(currentSub);
     }
