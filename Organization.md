@@ -18,11 +18,16 @@ Subscriptions are implemented using ConcurrentLinkedQueue and ConcurrentHashMap 
 
 ## Short description of how the domain model is organised
 
-There were some assumptions and decisions that needed to be made for us to map the DTO's provided into the domain model that we ended up with. Firstly, we created direct mapping with key classes, which are Booking, Concert, Performer and Seat. One important addition we made in the domain model was the use of a ConcertDate class, which is not originally included in the DTO's, as this acted as a way to be able to distinguish seats for certain concerts on certain dates. This made the booking functions much easier to construct and overall improved our development process with these well thought out changes. 
+One important addition we made in the domain model was the use of a ConcertDate class, which is not originally included in the DTOs, as this acted as a way to be able to distinguish seats for certain concerts on different dates.
 
-Another important decision we have to make was the representation of users in our domain model, and how we store a users bookings. We decided there were two main ways to do this; storing a user against each booking, or store all bookings for a certain user under the user themselves. We decided to go for the latter option, as when we need to access bookings, we are mainly concerned with retrieving booking for a specific user, and this option makes it easier and more efficient. 
-
-We found that the rest of the DTO's were not needed in our implementation, as we used the DTO's themselves to extrapolate data into our existing domain model, without the need to map them into our domain model. This worked well, and is how we came to the final organisation of our domain model. 
+### Relationships
+- Bidirectional
+	- between booking and user (many to one), in order to be able to fetch a booking's user (to check access permissions) and all bookings for a user
+	- between date and concert (many to one), in order to be able to fetch all dates for a concert and a given date's concert
+	- between seat and date (many to one), to check all seats for a date (for subscriptions) and a seat's date (for DTO mapping)
+- Unidirectional
+	- between booking and date (many to one), in order to fetch the date for a booking. It's not particularly necessary to fetch all bookings for a date, as seats have an isBooked column.
+	- between concert and performer (many to many), in order to fetch all performers for a concert. It is not within the scope of our application to fetch concerts for a performer.
 
 ### Fetching
 Our application uses lazy fetching in almost all places - this is intentional, as there are many relationships in our domain model and it would be very inefficient to eager fetch everything every time we fetched anything. We implemented eager fetching in 4 places:
