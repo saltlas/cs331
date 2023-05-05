@@ -7,7 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import javax.ws.rs.container.AsyncResponse;
 
-import org.javatuples.Pair;
+import java.util.ArrayList;
 
 /** A class that holds subscriptions for users of the concert booking service in a map */
 
@@ -30,19 +30,21 @@ public class SubscriptionMap {
     /** Adds a subscription to the map */
     public void addSub(Long dateId, AsyncResponse sub, Integer percentageBooked) {
         // if the date in question isn't present as a key in the map yet, add it
-        subs.putIfAbsent(dateId, new ConcurrentLinkedQueue<Pair>()); 
+        subs.putIfAbsent(dateId, new ConcurrentLinkedQueue<ArrayList>()); 
         // get the list of subs for the date
-        ConcurrentLinkedQueue<Pair> subsForDate = subs.get(dateId);
+        ConcurrentLinkedQueue<ArrayList> subsForDate = subs.get(dateId);
         // add a pair (tuple) to the list which contains the asyncresponse and the percentage at which to resume it
-        Pair<AsyncResponse, Integer> currentSub = new Pair<AsyncResponse, Integer>(sub, percentageBooked);
+        ArrayList<Object> currentSub = new ArrayList<Object>();
+        currentSub.add(sub);
+        currentSub.add(percentageBooked);
         subsForDate.add(currentSub);
     }
 
-    public ConcurrentLinkedQueue<Pair> getSubsForDate(Long dateId) {
+    public ConcurrentLinkedQueue<ArrayList> getSubsForDate(Long dateId) {
         return subs.get(dateId);
     }
 
-    public void removeSub(Long dateId, Pair<AsyncResponse, Integer> subPair) {
+    public void removeSub(Long dateId, ArrayList<Object> subPair) {
         if(subs.containsKey(dateId)) {
             subs.get(dateId).remove(subPair);
         }

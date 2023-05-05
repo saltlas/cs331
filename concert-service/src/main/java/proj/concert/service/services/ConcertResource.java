@@ -41,7 +41,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import org.javatuples.Pair;
 
 /** The resource class for a concert booking service */
 
@@ -436,13 +435,13 @@ public class ConcertResource {
         Long dateId = date.getId();
 
         // get all subs for this date
-        ConcurrentLinkedQueue<Pair> subsForDate = SubscriptionMap.instance().getSubsForDate(dateId);   
+        ConcurrentLinkedQueue<ArrayList> subsForDate = SubscriptionMap.instance().getSubsForDate(dateId);   
 
 
         if (!(subsForDate == null)) {
-            for (Pair<AsyncResponse, Integer> subInfo : subsForDate) {
-                if(subInfo.getValue1().intValue() <= percentageBooked) { // only notify the user if the percentage booked is over the requested threshold
-                    subInfo.getValue0().resume(notification); // value 0 is the asyncresponse to resume
+            for (ArrayList<Object> subInfo : subsForDate) {
+                if(((Integer)subInfo.get(1)).intValue() <= percentageBooked) { // only notify the user if the percentage booked is over the requested threshold
+                    ((AsyncResponse)subInfo.get(0)).resume(notification); // value 0 is the asyncresponse to resume
                     SubscriptionMap.instance().removeSub(dateId, subInfo);
                 }
             }
