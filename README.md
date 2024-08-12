@@ -1,5 +1,6 @@
 Project - A Concert Booking Service
 ==========
+This is a clone of the project I completed for CS331 in a group of 3. Below is the original README.
 
 The aim of this project is to build a Web service for concert booking. 
 
